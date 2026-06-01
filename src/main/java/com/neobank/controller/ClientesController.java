@@ -21,24 +21,17 @@ import java.util.List;
 
 public class ClientesController {
 
-    // Menú
     @FXML private Label lblUsuarioMenu;
-
-    // Tabla
     @FXML private TableView<Cliente> tablaClientes;
-    @FXML private TableColumn<Cliente, Long>   colId;
+    @FXML private TableColumn<Cliente, Long> colId;
     @FXML private TableColumn<Cliente, String> colNombre;
     @FXML private TableColumn<Cliente, String> colDni;
     @FXML private TableColumn<Cliente, String> colTelefono;
     @FXML private TableColumn<Cliente, String> colCorreo;
     @FXML private TableColumn<Cliente, String> colDireccion;
     @FXML private TableColumn<Cliente, String> colEstado;
-
-    // Búsqueda
     @FXML private TextField txtBuscar;
     @FXML private Label lblMensaje;
-
-    // Formulario
     @FXML private VBox panelFormulario;
     @FXML private Label lblTituloForm;
     @FXML private TextField txtNombre;
@@ -51,7 +44,6 @@ public class ClientesController {
     private ClienteService clienteService;
     private Usuario usuarioActual;
     private Cliente clienteEditando = null;
-    private ObservableList<Cliente> listaClientes;
 
     @FXML
     public void initialize() {
@@ -75,19 +67,16 @@ public class ClientesController {
         colCorreo.setCellValueFactory(new PropertyValueFactory<>("correo"));
         colDireccion.setCellValueFactory(new PropertyValueFactory<>("direccion"));
 
-        // CORRECCIÓN VITAL: Convertir el Enum a String para que JavaFX no oculte la fila
         colEstado.setCellValueFactory(cellData -> new SimpleStringProperty(
                 cellData.getValue().getEstado() != null ? cellData.getValue().getEstado().name() : ""
         ));
 
-        // Color verde/rojo según estado
         colEstado.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
-                    setText(null);
-                    setStyle("");
+                    setText(null); setStyle("");
                 } else {
                     setText(item);
                     setStyle(item.equals("ACTIVO")
@@ -100,42 +89,27 @@ public class ClientesController {
 
     private void cargarClientes() {
         List<Cliente> clientes = clienteService.listarTodos();
-        listaClientes = FXCollections.observableArrayList(clientes);
+        ObservableList<Cliente> listaClientes = FXCollections.observableArrayList(clientes);
         tablaClientes.setItems(listaClientes);
     }
 
-    @FXML
-    private void buscarCliente() {
+    @FXML private void buscarCliente() {
         String texto = txtBuscar.getText().trim();
-        if (texto.isEmpty()) {
-            cargarClientes();
-            return;
-        }
+        if (texto.isEmpty()) { cargarClientes(); return; }
         List<Cliente> resultado = clienteService.buscarPorNombre(texto);
         tablaClientes.setItems(FXCollections.observableArrayList(resultado));
     }
 
-    @FXML
-    private void mostrarTodos() {
-        txtBuscar.clear();
-        cargarClientes();
+    @FXML private void mostrarTodos() { txtBuscar.clear(); cargarClientes(); }
+
+    @FXML private void nuevoCliente() {
+        clienteEditando = null; limpiarFormulario();
+        lblTituloForm.setText("➕ Nuevo Cliente"); mostrarFormulario(true);
     }
 
-    @FXML
-    private void nuevoCliente() {
-        clienteEditando = null;
-        limpiarFormulario();
-        lblTituloForm.setText("➕ Nuevo Cliente");
-        mostrarFormulario(true);
-    }
-
-    @FXML
-    private void editarCliente() {
+    @FXML private void editarCliente() {
         Cliente seleccionado = tablaClientes.getSelectionModel().getSelectedItem();
-        if (seleccionado == null) {
-            mostrarMensaje("⚠ Selecciona un cliente", false);
-            return;
-        }
+        if (seleccionado == null) { mostrarMensaje("⚠ Selecciona un cliente primero", false); return; }
         clienteEditando = seleccionado;
         lblTituloForm.setText("✏ Editar Cliente");
         txtNombre.setText(seleccionado.getNombre());
@@ -146,87 +120,78 @@ public class ClientesController {
         mostrarFormulario(true);
     }
 
-    @FXML
-    private void eliminarCliente() {
+    @FXML private void eliminarCliente() {
         Cliente seleccionado = tablaClientes.getSelectionModel().getSelectedItem();
-        if (seleccionado == null) {
-            mostrarMensaje("⚠ Selecciona un cliente", false);
-            return;
-        }
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Confirmar eliminación");
-        alert.setHeaderText("¿Eliminar cliente?");
-        alert.setContentText("Se eliminará: " + seleccionado.getNombre());
-        alert.showAndWait().ifPresent(resp -> {
-            if (resp == ButtonType.OK) {
-                clienteService.eliminar(seleccionado.getId());
-                cargarClientes();
-                mostrarMensaje("✔ Cliente eliminado correctamente", true);
-            }
-        });
+        if (seleccionado == null) { mostrarMensaje("⚠ Selecciona un cliente", false); return; }
+        clienteService.eliminar(seleccionado.getId());
+        cargarClientes();
+        mostrarMensaje("✔ Cliente eliminado correctamente", true);
     }
 
-    @FXML
-    private void guardarCliente() {
-        if (txtNombre.getText().trim().isEmpty() || txtDni.getText().trim().isEmpty()) {
-            lblErrorForm.setText("⚠ Nombre y DNI son obligatorios");
+    // 🚀 AQUÍ ESTÁN LAS NUEVAS VALIDACIONES BLINDADAS
+    @FXML private void guardarCliente() {
+        String nombre = txtNombre.getText().trim();
+        String dni = txtDni.getText().trim();
+        String telefono = txtTelefono.getText().trim();
+        String correo = txtCorreo.getText().trim();
+        String direccion = txtDireccion.getText().trim();
+
+        // VALIDACIÓN 1: Ningún campo vacío
+        if (nombre.isEmpty() || dni.isEmpty() || telefono.isEmpty() || correo.isEmpty() || direccion.isEmpty()) {
+            lblErrorForm.setText("⚠ Todos los campos son obligatorios.");
+            return;
+        }
+
+        // VALIDACIÓN 2: DNI de 8 números exactos
+        if (!dni.matches("\\d{8}")) {
+            lblErrorForm.setText("⚠ El DNI debe tener exactamente 8 números.");
+            return;
+        }
+
+        // VALIDACIÓN 3: Teléfono de 9 números exactos
+        if (!telefono.matches("\\d{9}")) {
+            lblErrorForm.setText("⚠ El teléfono debe tener exactamente 9 números.");
+            return;
+        }
+
+        // VALIDACIÓN 4: Formato de correo válido
+        if (!correo.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            lblErrorForm.setText("⚠ Ingresa un correo electrónico válido.");
+            return;
+        }
+
+        // VALIDACIÓN 5: DNI Único (que no se repita en la base de datos)
+        boolean dniExiste = clienteService.listarTodos().stream()
+                .anyMatch(c -> c.getDni().equals(dni) && (clienteEditando == null || !c.getId().equals(clienteEditando.getId())));
+
+        if (dniExiste) {
+            lblErrorForm.setText("⚠ Este DNI ya está registrado en el banco.");
             return;
         }
 
         try {
             if (clienteEditando == null) {
                 Cliente nuevo = new Cliente();
-                nuevo.setNombre(txtNombre.getText().trim());
-                nuevo.setDni(txtDni.getText().trim());
-                nuevo.setTelefono(txtTelefono.getText().trim());
-                nuevo.setCorreo(txtCorreo.getText().trim());
-                nuevo.setDireccion(txtDireccion.getText().trim());
-                nuevo.setEstado(EstadoCliente.ACTIVO);
+                nuevo.setNombre(nombre); nuevo.setDni(dni);
+                nuevo.setTelefono(telefono); nuevo.setCorreo(correo);
+                nuevo.setDireccion(direccion); nuevo.setEstado(EstadoCliente.ACTIVO);
                 clienteService.guardar(nuevo);
-                mostrarMensaje("✔ Cliente registrado correctamente", true);
+                mostrarMensaje("✔ Cliente registrado con éxito", true);
             } else {
-                clienteEditando.setNombre(txtNombre.getText().trim());
-                clienteEditando.setDni(txtDni.getText().trim());
-                clienteEditando.setTelefono(txtTelefono.getText().trim());
-                clienteEditando.setCorreo(txtCorreo.getText().trim());
-                clienteEditando.setDireccion(txtDireccion.getText().trim());
+                clienteEditando.setNombre(nombre); clienteEditando.setDni(dni);
+                clienteEditando.setTelefono(telefono); clienteEditando.setCorreo(correo);
+                clienteEditando.setDireccion(direccion);
                 clienteService.actualizar(clienteEditando);
-                mostrarMensaje("✔ Cliente actualizado correctamente", true);
+                mostrarMensaje("✔ Cliente actualizado", true);
             }
-            cargarClientes();
-            mostrarFormulario(false);
-            limpiarFormulario();
-
-        } catch (IllegalArgumentException e) {
-            lblErrorForm.setText("⚠ " + e.getMessage());
-        }
+            cargarClientes(); mostrarFormulario(false); limpiarFormulario();
+        } catch (IllegalArgumentException e) { lblErrorForm.setText("⚠ " + e.getMessage()); }
     }
 
-    @FXML
-    private void cancelarForm() {
-        mostrarFormulario(false);
-        limpiarFormulario();
-    }
-
-    private void mostrarFormulario(boolean visible) {
-        panelFormulario.setVisible(visible);
-        panelFormulario.setManaged(visible);
-    }
-
-    private void limpiarFormulario() {
-        txtNombre.clear();
-        txtDni.clear();
-        txtTelefono.clear();
-        txtCorreo.clear();
-        txtDireccion.clear();
-        lblErrorForm.setText("");
-        clienteEditando = null;
-    }
-
-    private void mostrarMensaje(String msg, boolean exito) {
-        lblMensaje.setStyle(exito ? "-fx-text-fill: #66bb6a;" : "-fx-text-fill: #ef5350;");
-        lblMensaje.setText(msg);
-    }
+    @FXML private void cancelarForm() { mostrarFormulario(false); limpiarFormulario(); }
+    private void mostrarFormulario(boolean visible) { panelFormulario.setVisible(visible); panelFormulario.setManaged(visible); }
+    private void limpiarFormulario() { txtNombre.clear(); txtDni.clear(); txtTelefono.clear(); txtCorreo.clear(); txtDireccion.clear(); lblErrorForm.setText(""); clienteEditando = null; }
+    private void mostrarMensaje(String msg, boolean exito) { lblMensaje.setStyle(exito ? "-fx-text-fill: #66bb6a;" : "-fx-text-fill: #ef5350;"); lblMensaje.setText(msg); }
 
     private void navegar(String fxml, int w, int h) {
         try {
@@ -235,28 +200,23 @@ public class ClientesController {
             Parent root = loader.load();
             Object ctrl = loader.getController();
 
-            if (ctrl instanceof DashboardController dc) {
-                dc.setUsuario(usuarioActual);
-            } else if (ctrl instanceof ClientesController cc) {
-                cc.setUsuario(usuarioActual);
-            }
+            if (ctrl instanceof DashboardController dc) dc.setUsuario(usuarioActual);
+            else if (ctrl instanceof ClientesController cc) cc.setUsuario(usuarioActual);
+            else if (ctrl instanceof CuentasController cu) cu.setUsuario(usuarioActual);
+            else if (ctrl instanceof MovimientosController mc) mc.setUsuario(usuarioActual);
+            else if (ctrl instanceof TransferenciasController tc) tc.setUsuario(usuarioActual);
+            else if (ctrl instanceof TarjetasController tarc) tarc.setUsuario(usuarioActual);
 
             Stage stage = (Stage) lblUsuarioMenu.getScene().getWindow();
             stage.setScene(new Scene(root, w, h));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
     @FXML private void irDashboard() { navegar("Dashboard.fxml", 1280, 720); }
-    @FXML private void irClientes() {}
-    @FXML private void irCuentas() {}
-    @FXML private void irMovimientos() {}
-    @FXML private void irTransferencias() {}
-    @FXML private void irTarjetas() {}
-
-    @FXML
-    private void cerrarSesion() {
-        navegar("Login.fxml", 900, 600);
-    }
+    @FXML private void irClientes() { }
+    @FXML private void irCuentas() { navegar("Cuentas.fxml", 1280, 720); }
+    @FXML private void irMovimientos() { navegar("Movimientos.fxml", 1280, 720); }
+    @FXML private void irTransferencias() { navegar("Transferencias.fxml", 1280, 720); }
+    @FXML private void irTarjetas() { navegar("Tarjetas.fxml", 1280, 720); }
+    @FXML private void cerrarSesion() { navegar("Login.fxml", 900, 600); }
 }

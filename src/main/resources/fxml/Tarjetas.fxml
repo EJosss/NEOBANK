@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.neobank.controller.TarjetasController"
+            prefWidth="1280" prefHeight="720"
+            style="-fx-background-color: #1a1a2e;">
+    <left>
+        <VBox prefWidth="220" style="-fx-background-color: #16213e;">
+            <VBox alignment="CENTER" prefHeight="80" style="-fx-background-color: #0f3460; -fx-padding: 15;">
+                <Label text="🏦 NeoBank" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #4fc3f7;"/>
+                <Label fx:id="lblUsuarioMenu" text="Usuario" style="-fx-font-size: 11px; -fx-text-fill: #90a4ae;"/>
+            </VBox>
+            <Button text="📊  Dashboard" onAction="#irDashboard" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Button text="👥  Clientes" onAction="#irClientes" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Button text="🏦  Cuentas" onAction="#irCuentas" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Button text="💰  Movimientos" onAction="#irMovimientos" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Button text="🔁  Transferencias" onAction="#irTransferencias" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Button text="💳  Tarjetas" prefWidth="220" prefHeight="50" style="-fx-background-color: #4fc3f7; -fx-text-fill: #1a1a2e; -fx-font-weight: bold; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Region VBox.vgrow="ALWAYS"/>
+            <Button text="🚪  Cerrar Sesión" onAction="#cerrarSesion" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #ef5350; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+        </VBox>
+    </left>
+
+    <center>
+        <VBox spacing="15" style="-fx-padding: 25;">
+            <Label text="💳 Gestión de Tarjetas" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+
+            <HBox spacing="10">
+                <Button text="➕ Emitir Nueva Tarjeta" onAction="#nuevaTarjeta" prefHeight="38" style="-fx-background-color: #4fc3f7; -fx-text-fill: #1a1a2e; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 0 15 0 15;"/>
+                <Button text="🔒 Bloquear Tarjeta" onAction="#bloquearTarjeta" prefHeight="38" style="-fx-background-color: #ef5350; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 0 15 0 15;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblMensaje" text="" style="-fx-font-size: 14px;" alignment="CENTER_RIGHT" prefHeight="38"/>
+            </HBox>
+
+            <TableView fx:id="tablaTarjetas" VBox.vgrow="ALWAYS" style="-fx-background-color: #16213e; -fx-background-radius: 10;">
+                <columns>
+                    <TableColumn fx:id="colNumero" text="Número de Tarjeta" prefWidth="200"/>
+                    <TableColumn fx:id="colCuenta" text="Cuenta Vinculada" prefWidth="180"/>
+                    <TableColumn fx:id="colTipo" text="Tipo" prefWidth="120"/>
+                    <TableColumn fx:id="colVencimiento" text="Vencimiento" prefWidth="120"/>
+                    <TableColumn fx:id="colEstado" text="Estado" prefWidth="120"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+
+    <right>
+        <VBox fx:id="panelFormulario" prefWidth="320" spacing="15" style="-fx-background-color: #16213e; -fx-padding: 25;" visible="false" managed="false">
+            <Label text="Emitir Tarjeta" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+
+            <Label text="Cuenta a vincular *" style="-fx-text-fill: #90a4ae; -fx-font-size: 12px;"/>
+            <ComboBox fx:id="cmbCuentas" prefWidth="270" promptText="Seleccionar..." style="-fx-background-color: #0f3460; -fx-background-radius: 8;"/>
+
+            <Label text="Tipo de Tarjeta *" style="-fx-text-fill: #90a4ae; -fx-font-size: 12px;"/>
+            <ComboBox fx:id="cmbTipo" prefWidth="270" promptText="Seleccionar..." style="-fx-background-color: #0f3460; -fx-background-radius: 8;"/>
+
+            <Label text="Límite (Solo Crédito)" style="-fx-text-fill: #90a4ae; -fx-font-size: 12px;"/>
+            <TextField fx:id="txtLimite" promptText="Ej: 5000" style="-fx-background-color: #0f3460; -fx-text-fill: white; -fx-background-radius: 8;"/>
+
+            <Region VBox.vgrow="ALWAYS"/>
+            <HBox spacing="10">
+                <Button text="💾 Generar" onAction="#guardarTarjeta" prefWidth="130" prefHeight="40" style="-fx-background-color: #66bb6a; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;"/>
+                <Button text="✕ Cancelar" onAction="#cancelarForm" prefWidth="130" prefHeight="40" style="-fx-background-color: #ef5350; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand;"/>
+            </HBox>
+        </VBox>
+    </right>
+</BorderPane>

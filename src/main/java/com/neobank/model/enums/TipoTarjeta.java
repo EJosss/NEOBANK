@@ -1,6 +1,2 @@
 package com.neobank.model.enums;
-
-public enum TipoTarjeta {
-    DEBITO,
-    CREDITO
-}
+public enum TipoTarjeta { DEBITO, CREDITO }

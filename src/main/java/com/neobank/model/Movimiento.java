@@ -1,28 +1,27 @@
 package com.neobank.model;
 
-import com.neobank.model.enums.EstadoCuenta;
-import com.neobank.model.enums.TipoCuenta;
+import com.neobank.model.enums.TipoMovimiento;
 import io.micronaut.data.annotation.*;
 import io.micronaut.data.model.naming.NamingStrategies;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @MappedEntity(
-        value = "cuenta_bancaria",
+        value = "movimiento",
         namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase.class
 )
 @Data
 @NoArgsConstructor
-public class CuentaBancaria {
-
+public class Movimiento {
     @Id
     @GeneratedValue(GeneratedValue.Type.AUTO)
     private Long id;
 
-    private String numeroCuenta;
-    private Long idCliente;
-    private TipoCuenta tipoCuenta;
-    private BigDecimal saldo;
-    private EstadoCuenta estado = EstadoCuenta.ACTIVA;
+    private Long idCuenta;
+    private TipoMovimiento tipoMovimiento;
+    private BigDecimal monto;
+    private LocalDateTime fecha = LocalDateTime.now();
+    private String descripcion;
 }

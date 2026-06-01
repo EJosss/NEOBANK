@@ -29,3 +29,23 @@ CREATE TABLE IF NOT EXISTS cuenta_bancaria (
     estado VARCHAR(50),
     FOREIGN KEY (id_cliente) REFERENCES cliente(id)
     );
+CREATE TABLE IF NOT EXISTS movimiento (
+                                          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                          id_cuenta BIGINT,
+                                          tipo_movimiento VARCHAR(50),
+    monto DECIMAL(19, 4),
+    fecha TIMESTAMP,
+    descripcion VARCHAR(255),
+    FOREIGN KEY (id_cuenta) REFERENCES cuenta_bancaria(id)
+    );
+CREATE TABLE IF NOT EXISTS tarjeta (
+                                       id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                       numero_tarjeta VARCHAR(20),
+    id_cuenta BIGINT,
+    tipo_tarjeta VARCHAR(20),
+    limite DECIMAL(19, 4),
+    fecha_vencimiento VARCHAR(10),
+    ccv VARCHAR(4),
+    estado VARCHAR(20),
+    FOREIGN KEY (id_cuenta) REFERENCES cuenta_bancaria(id)
+    );

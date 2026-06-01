@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.neobank.controller.MovimientosController"
+            prefWidth="1280" prefHeight="720"
+            style="-fx-background-color: #1a1a2e;">
+    <left>
+        <VBox prefWidth="220" style="-fx-background-color: #16213e;">
+            <VBox alignment="CENTER" prefHeight="80" style="-fx-background-color: #0f3460; -fx-padding: 15;">
+                <Label text="🏦 NeoBank" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #4fc3f7;"/>
+                <Label fx:id="lblUsuarioMenu" text="Usuario" style="-fx-font-size: 11px; -fx-text-fill: #90a4ae;"/>
+            </VBox>
+            <Button text="📊  Dashboard" onAction="#irDashboard" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Button text="👥  Clientes" onAction="#irClientes" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Button text="🏦  Cuentas" onAction="#irCuentas" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Button text="💰  Movimientos" onAction="#irMovimientos" prefWidth="220" prefHeight="50" style="-fx-background-color: #4fc3f7; -fx-text-fill: #1a1a2e; -fx-font-weight: bold; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Button text="🔁  Transferencias" onAction="#irTransferencias" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Button text="💳  Tarjetas" onAction="#irTarjetas" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Region VBox.vgrow="ALWAYS"/>
+            <Button text="🚪  Cerrar Sesión" onAction="#cerrarSesion" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #ef5350; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+        </VBox>
+    </left>
+
+    <center>
+        <VBox spacing="15" style="-fx-padding: 25;">
+            <Label text="💰 Movimientos de Cuenta" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <ComboBox fx:id="cmbCuentasBusqueda" promptText="Selecciona una cuenta..." prefWidth="350" prefHeight="38" style="-fx-background-color: #16213e; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-size: 13px;"/>
+                <Button text="🔍 Ver Movimientos" onAction="#buscarMovimientos" prefHeight="38" style="-fx-background-color: #546e7a; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 0 15 0 15;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblSaldoActual" text="Saldo Actual: S/ 0.00" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #66bb6a;"/>
+            </HBox>
+
+            <HBox spacing="10">
+                <Button text="➕ Nuevo Movimiento" onAction="#nuevoMovimiento" prefHeight="38" style="-fx-background-color: #4fc3f7; -fx-text-fill: #1a1a2e; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 0 15 0 15;"/>
+                <Label fx:id="lblMensaje" text="" style="-fx-font-size: 14px;" alignment="CENTER_LEFT" prefHeight="38"/>
+            </HBox>
+
+            <TableView fx:id="tablaMovimientos" VBox.vgrow="ALWAYS" style="-fx-background-color: #16213e; -fx-background-radius: 10;">
+                <columns>
+                    <TableColumn fx:id="colFecha" text="Fecha y Hora" prefWidth="150"/>
+                    <TableColumn fx:id="colTipo" text="Tipo" prefWidth="120"/>
+                    <TableColumn fx:id="colMonto" text="Monto" prefWidth="120"/>
+                    <TableColumn fx:id="colDesc" text="Descripción" prefWidth="300"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+
+    <right>
+        <VBox fx:id="panelFormulario" prefWidth="320" spacing="15" style="-fx-background-color: #16213e; -fx-padding: 25;" visible="false" managed="false">
+            <Label text="Registrar Movimiento" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+
+            <Label text="Tipo de Movimiento *" style="-fx-text-fill: #90a4ae; -fx-font-size: 12px;"/>
+            <ComboBox fx:id="cmbTipoMovimiento" prefWidth="270" promptText="Seleccionar..." style="-fx-background-color: #0f3460; -fx-background-radius: 8;"/>
+
+            <Label text="Monto (S/) *" style="-fx-text-fill: #90a4ae; -fx-font-size: 12px;"/>
+            <TextField fx:id="txtMonto" promptText="Ej: 100.50" style="-fx-background-color: #0f3460; -fx-text-fill: white; -fx-background-radius: 8;"/>
+
+            <Label text="Descripción" style="-fx-text-fill: #90a4ae; -fx-font-size: 12px;"/>
+            <TextField fx:id="txtDescripcion" promptText="Ej: Pago de luz" style="-fx-background-color: #0f3460; -fx-text-fill: white; -fx-background-radius: 8;"/>
+
+            <Region VBox.vgrow="ALWAYS"/>
+            <HBox spacing="10">
+                <Button text="💾 Confirmar" onAction="#guardarMovimiento" prefWidth="130" prefHeight="40" style="-fx-background-color: #66bb6a; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;"/>
+                <Button text="✕ Cancelar" onAction="#cancelarForm" prefWidth="130" prefHeight="40" style="-fx-background-color: #ef5350; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand;"/>
+            </HBox>
+        </VBox>
+    </right>
+</BorderPane>
