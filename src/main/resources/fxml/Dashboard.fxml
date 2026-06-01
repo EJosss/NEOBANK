@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.chart.*?>
+
+<BorderPane
+        xmlns:fx="http://javafx.com/fxml"
+        fx:controller="com.neobank.controller.DashboardController"
+        prefWidth="1280" prefHeight="720"
+        style="-fx-background-color: #1a1a2e;">
+
+    <!-- MENÚ LATERAL -->
+    <left>
+        <VBox
+                prefWidth="220"
+                style="-fx-background-color: #16213e;
+                   -fx-padding: 0;">
+
+            <!-- Logo -->
+            <VBox
+                    alignment="CENTER"
+                    prefHeight="80"
+                    style="-fx-background-color: #0f3460;
+                       -fx-padding: 15;">
+                <Label
+                        text="🏦 NeoBank"
+                        style="-fx-font-size: 20px;
+                           -fx-font-weight: bold;
+                           -fx-text-fill: #4fc3f7;"/>
+                <Label
+                        fx:id="lblUsuarioMenu"
+                        text="Usuario"
+                        style="-fx-font-size: 11px;
+                           -fx-text-fill: #90a4ae;"/>
+            </VBox>
+
+            <!-- Botones del menú -->
+            <Button text="📊  Dashboard"
+                    onAction="#irDashboard"
+                    prefWidth="220" prefHeight="50"
+                    style="-fx-background-color: #4fc3f7;
+                           -fx-text-fill: #1a1a2e;
+                           -fx-font-weight: bold;
+                           -fx-font-size: 13px;
+                           -fx-alignment: CENTER-LEFT;
+                           -fx-padding: 0 0 0 25;
+                           -fx-background-radius: 0;
+                           -fx-cursor: hand;"/>
+
+            <Button text="👥  Clientes"
+                    onAction="#irClientes"
+                    prefWidth="220" prefHeight="50"
+                    style="-fx-background-color: transparent;
+                           -fx-text-fill: #90a4ae;
+                           -fx-font-size: 13px;
+                           -fx-alignment: CENTER-LEFT;
+                           -fx-padding: 0 0 0 25;
+                           -fx-background-radius: 0;
+                           -fx-cursor: hand;"/>
+
+            <Button text="🏦  Cuentas"
+                    onAction="#irCuentas"
+                    prefWidth="220" prefHeight="50"
+                    style="-fx-background-color: transparent;
+                           -fx-text-fill: #90a4ae;
+                           -fx-font-size: 13px;
+                           -fx-alignment: CENTER-LEFT;
+                           -fx-padding: 0 0 0 25;
+                           -fx-background-radius: 0;
+                           -fx-cursor: hand;"/>
+
+            <Button text="💰  Movimientos"
+                    onAction="#irMovimientos"
+                    prefWidth="220" prefHeight="50"
+                    style="-fx-background-color: transparent;
+                           -fx-text-fill: #90a4ae;
+                           -fx-font-size: 13px;
+                           -fx-alignment: CENTER-LEFT;
+                           -fx-padding: 0 0 0 25;
+                           -fx-background-radius: 0;
+                           -fx-cursor: hand;"/>
+
+            <Button text="🔁  Transferencias"
+                    onAction="#irTransferencias"
+                    prefWidth="220" prefHeight="50"
+                    style="-fx-background-color: transparent;
+                           -fx-text-fill: #90a4ae;
+                           -fx-font-size: 13px;
+                           -fx-alignment: CENTER-LEFT;
+                           -fx-padding: 0 0 0 25;
+                           -fx-background-radius: 0;
+                           -fx-cursor: hand;"/>
+
+            <Button text="💳  Tarjetas"
+                    onAction="#irTarjetas"
+                    prefWidth="220" prefHeight="50"
+                    style="-fx-background-color: transparent;
+                           -fx-text-fill: #90a4ae;
+                           -fx-font-size: 13px;
+                           -fx-alignment: CENTER-LEFT;
+                           -fx-padding: 0 0 0 25;
+                           -fx-background-radius: 0;
+                           -fx-cursor: hand;"/>
+
+            <!-- Espaciador -->
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <Button text="🚪  Cerrar Sesión"
+                    onAction="#cerrarSesion"
+                    prefWidth="220" prefHeight="50"
+                    style="-fx-background-color: transparent;
+                           -fx-text-fill: #ef5350;
+                           -fx-font-size: 13px;
+                           -fx-alignment: CENTER-LEFT;
+                           -fx-padding: 0 0 0 25;
+                           -fx-background-radius: 0;
+                           -fx-cursor: hand;"/>
+        </VBox>
+    </left>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <center>
+        <ScrollPane
+                fitToWidth="true"
+                style="-fx-background: #1a1a2e;
+                   -fx-background-color: #1a1a2e;">
+            <content>
+                <VBox spacing="20"
+                      style="-fx-padding: 25;">
+
+                    <!-- Título -->
+                    <Label text="Dashboard"
+                           style="-fx-font-size: 22px;
+                                  -fx-font-weight: bold;
+                                  -fx-text-fill: white;"/>
+
+                    <!-- Tarjetas estadísticas -->
+                    <HBox spacing="15">
+
+                        <VBox
+                                prefWidth="200" prefHeight="100"
+                                alignment="CENTER" spacing="5"
+                                style="-fx-background-color: #0f3460;
+                                   -fx-background-radius: 12;
+                                   -fx-padding: 20;">
+                            <Label text="👥"
+                                   style="-fx-font-size: 28px;"/>
+                            <Label fx:id="lblTotalClientes"
+                                   text="0"
+                                   style="-fx-font-size: 24px;
+                                          -fx-font-weight: bold;
+                                          -fx-text-fill: #4fc3f7;"/>
+                            <Label text="Total Clientes"
+                                   style="-fx-font-size: 11px;
+                                          -fx-text-fill: #90a4ae;"/>
+                        </VBox>
+
+                        <VBox
+                                prefWidth="200" prefHeight="100"
+                                alignment="CENTER" spacing="5"
+                                style="-fx-background-color: #0f3460;
+                                   -fx-background-radius: 12;
+                                   -fx-padding: 20;">
+                            <Label text="🏦"
+                                   style="-fx-font-size: 28px;"/>
+                            <Label fx:id="lblTotalCuentas"
+                                   text="0"
+                                   style="-fx-font-size: 24px;
+                                          -fx-font-weight: bold;
+                                          -fx-text-fill: #66bb6a;"/>
+                            <Label text="Total Cuentas"
+                                   style="-fx-font-size: 11px;
+                                          -fx-text-fill: #90a4ae;"/>
+                        </VBox>
+
+                        <VBox
+                                prefWidth="200" prefHeight="100"
+                                alignment="CENTER" spacing="5"
+                                style="-fx-background-color: #0f3460;
+                                   -fx-background-radius: 12;
+                                   -fx-padding: 20;">
+                            <Label text="💰"
+                                   style="-fx-font-size: 28px;"/>
+                            <Label fx:id="lblDineroTotal"
+                                   text="S/ 0.00"
+                                   style="-fx-font-size: 20px;
+                                          -fx-font-weight: bold;
+                                          -fx-text-fill: #ffd54f;"/>
+                            <Label text="Dinero Total"
+                                   style="-fx-font-size: 11px;
+                                          -fx-text-fill: #90a4ae;"/>
+                        </VBox>
+
+                        <VBox
+                                prefWidth="200" prefHeight="100"
+                                alignment="CENTER" spacing="5"
+                                style="-fx-background-color: #0f3460;
+                                   -fx-background-radius: 12;
+                                   -fx-padding: 20;">
+                            <Label text="🔁"
+                                   style="-fx-font-size: 28px;"/>
+                            <Label fx:id="lblTransferenciasHoy"
+                                   text="0"
+                                   style="-fx-font-size: 24px;
+                                          -fx-font-weight: bold;
+                                          -fx-text-fill: #ef5350;"/>
+                            <Label text="Transferencias Hoy"
+                                   style="-fx-font-size: 11px;
+                                          -fx-text-fill: #90a4ae;"/>
+                        </VBox>
+
+                    </HBox>
+
+                    <!-- Gráfico de barras -->
+                    <VBox
+                            style="-fx-background-color: #16213e;
+                               -fx-background-radius: 12;
+                               -fx-padding: 20;">
+                        <Label text="📈 Resumen del Sistema"
+                               style="-fx-font-size: 15px;
+                                      -fx-font-weight: bold;
+                                      -fx-text-fill: white;
+                                      -fx-padding: 0 0 10 0;"/>
+                        <BarChart fx:id="barChart"
+                                  prefHeight="250"
+                                  style="-fx-background-color: transparent;">
+                            <xAxis>
+                                <CategoryAxis
+                                        label="Categoría"
+                                        style="-fx-tick-label-fill: #90a4ae;"/>
+                            </xAxis>
+                            <yAxis>
+                                <NumberAxis
+                                        label="Cantidad"
+                                        style="-fx-tick-label-fill: #90a4ae;"/>
+                            </yAxis>
+                        </BarChart>
+                    </VBox>
+
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+
+</BorderPane>

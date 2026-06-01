@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+
+<BorderPane
+        xmlns:fx="http://javafx.com/fxml"
+        fx:controller="com.neobank.controller.LoginController"
+        prefWidth="900"
+        prefHeight="600"
+        style="-fx-background-color: #1a1a2e;">
+
+    <center>
+        <VBox
+                alignment="CENTER"
+                spacing="18"
+                maxWidth="380"
+                style="-fx-background-color: #16213e;
+                   -fx-background-radius: 15;
+                   -fx-padding: 45;">
+
+            <Label
+                    text="🏦 NeoBank System"
+                    style="-fx-font-size: 26px;
+                       -fx-font-weight: bold;
+                       -fx-text-fill: #4fc3f7;"/>
+
+            <Label
+                    text="Sistema de Gestión Bancaria"
+                    style="-fx-font-size: 12px;
+                       -fx-text-fill: #90a4ae;"/>
+
+            <Separator prefWidth="300"/>
+
+            <Label
+                    text="Usuario"
+                    style="-fx-text-fill: #90a4ae;
+                       -fx-font-size: 12px;"/>
+
+            <TextField
+                    fx:id="txtUsuario"
+                    promptText="Ingresa tu usuario"
+                    prefWidth="300"
+                    prefHeight="40"
+                    style="-fx-background-color: #0f3460;
+                       -fx-text-fill: white;
+                       -fx-prompt-text-fill: #546e7a;
+                       -fx-background-radius: 8;
+                       -fx-padding: 10;
+                       -fx-font-size: 13px;"/>
+
+            <Label
+                    text="Contraseña"
+                    style="-fx-text-fill: #90a4ae;
+                       -fx-font-size: 12px;"/>
+
+            <PasswordField
+                    fx:id="txtPassword"
+                    promptText="Ingresa tu contraseña"
+                    prefWidth="300"
+                    prefHeight="40"
+                    style="-fx-background-color: #0f3460;
+                       -fx-text-fill: white;
+                       -fx-prompt-text-fill: #546e7a;
+                       -fx-background-radius: 8;
+                       -fx-padding: 10;
+                       -fx-font-size: 13px;"/>
+
+            <Label
+                    fx:id="lblError"
+                    text=""
+                    style="-fx-text-fill: #ef5350;
+                       -fx-font-size: 12px;"/>
+
+            <Button
+                    fx:id="btnLogin"
+                    text="INGRESAR"
+                    onAction="#handleLogin"
+                    prefWidth="300"
+                    prefHeight="42"
+                    style="-fx-background-color: #4fc3f7;
+                       -fx-text-fill: #1a1a2e;
+                       -fx-font-weight: bold;
+                       -fx-font-size: 13px;
+                       -fx-background-radius: 8;
+                       -fx-cursor: hand;"/>
+
+            <Label
+                    text="NeoBank S.A. © 2026"
+                    style="-fx-text-fill: #37474f;
+                       -fx-font-size: 11px;"/>
+        </VBox>
+    </center>
+</BorderPane>
