@@ -8,5 +8,7 @@ import java.util.List;
 
 @JdbcRepository(dialect = Dialect.H2)
 public interface MovimientoRepository extends CrudRepository<Movimiento, Long> {
-    List<Movimiento> findByIdCuenta(Long idCuenta);
+
+    List<Movimiento> findByIdCuentaOrderByFechaDesc(Long idCuenta);
+
 }

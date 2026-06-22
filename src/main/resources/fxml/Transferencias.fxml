@@ -2,49 +2,49 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.neobank.controller.TransferenciasController"
-            prefWidth="1280" prefHeight="720"
-            style="-fx-background-color: #1a1a2e;">
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.neobank.controller.TransferenciasController" prefWidth="1280" prefHeight="720" style="-fx-background-color: #F8F9FA;">
     <left>
-        <VBox prefWidth="220" style="-fx-background-color: #16213e;">
-            <VBox alignment="CENTER" prefHeight="80" style="-fx-background-color: #0f3460; -fx-padding: 15;">
-                <Label text="🏦 NeoBank" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #4fc3f7;"/>
-                <Label fx:id="lblUsuarioMenu" text="Usuario" style="-fx-font-size: 11px; -fx-text-fill: #90a4ae;"/>
+        <VBox prefWidth="240" style="-fx-background-color: #FFFFFF; -fx-border-color: #E0E0E0; -fx-border-width: 0 1 0 0;">
+            <VBox alignment="CENTER" prefHeight="90" style="-fx-background-color: #FFFFFF; -fx-padding: 15; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;">
+                <Label text="⬢ NeoBank" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1D52A8;"/>
+                <Label fx:id="lblUsuarioMenu" text="Usuario" style="-fx-font-size: 12px; -fx-text-fill: #666666;"/>
             </VBox>
-            <Button text="📊  Dashboard" onAction="#irDashboard" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
-            <Button text="👥  Clientes" onAction="#irClientes" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
-            <Button text="🏦  Cuentas" onAction="#irCuentas" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
-            <Button text="💰  Movimientos" onAction="#irMovimientos" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
-            <Button text="🔁  Transferencias" prefWidth="220" prefHeight="50" style="-fx-background-color: #4fc3f7; -fx-text-fill: #1a1a2e; -fx-font-weight: bold; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
-            <Button text="💳  Tarjetas" onAction="#irTarjetas" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #90a4ae; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Region prefHeight="10"/>
+            <Button fx:id="btnMenuDashboard" text="📊  Dashboard" onAction="#irDashboard" prefWidth="240" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #666666; -fx-font-size: 14px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 34; -fx-cursor: hand;"/>
+            <Button text="👥  Clientes" onAction="#irClientes" prefWidth="240" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #666666; -fx-font-size: 14px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 34; -fx-cursor: hand;"/>
+            <Button text="🏦  Cuentas" onAction="#irCuentas" prefWidth="240" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #666666; -fx-font-size: 14px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 34; -fx-cursor: hand;"/>
+            <Button text="💰  Movimientos" onAction="#irMovimientos" prefWidth="240" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #666666; -fx-font-size: 14px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 34; -fx-cursor: hand;"/>
+            <Button text="🔁  Transferencias" prefWidth="240" prefHeight="50" style="-fx-background-color: #F0F4F8; -fx-text-fill: #1D52A8; -fx-font-weight: bold; -fx-font-size: 14px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 30; -fx-cursor: hand; -fx-border-color: #1D52A8; -fx-border-width: 0 0 0 4;"/>
+            <Button text="💳  Tarjetas" onAction="#irTarjetas" prefWidth="240" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #666666; -fx-font-size: 14px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 34; -fx-cursor: hand;"/>
             <Region VBox.vgrow="ALWAYS"/>
-            <Button text="🚪  Cerrar Sesión" onAction="#cerrarSesion" prefWidth="220" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #ef5350; -fx-font-size: 13px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 25; -fx-cursor: hand;"/>
+            <Button text="🚪  Cerrar Sesión" onAction="#cerrarSesion" prefWidth="240" prefHeight="50" style="-fx-background-color: transparent; -fx-text-fill: #E53935; -fx-font-size: 14px; -fx-alignment: CENTER-LEFT; -fx-padding: 0 0 0 34; -fx-cursor: hand;"/>
         </VBox>
     </left>
     <center>
         <VBox alignment="CENTER" spacing="20" style="-fx-padding: 40;">
-            <VBox maxWidth="500" spacing="20" style="-fx-background-color: #16213e; -fx-padding: 40; -fx-background-radius: 15;">
-                <Label text="🔁 Enviar Transferencia" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;"/>
-                <VBox spacing="8">
-                    <Label text="Cuenta de Origen *" style="-fx-text-fill: #90a4ae; -fx-font-size: 14px;"/>
-                    <ComboBox fx:id="cmbCuentaOrigen" onAction="#actualizarSaldo" promptText="Selecciona tu cuenta..." prefWidth="Infinity" prefHeight="45" style="-fx-background-color: #0f3460; -fx-background-radius: 8; -fx-font-size: 14px;"/>
-                    <Label fx:id="lblSaldoDisponible" text="Saldo Disponible: S/ 0.00" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #4fc3f7;"/>
+            <VBox maxWidth="500" spacing="20" style="-fx-background-color: #FFFFFF; -fx-border-color: #E0E0E0; -fx-border-radius: 10; -fx-padding: 40; -fx-background-radius: 10;">
+                <Label text="Enviar Transferencia" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1A1A1A;"/>
+                <Region prefHeight="10"/>
+                <VBox spacing="5">
+                    <Label text="Cuenta de Origen *" style="-fx-text-fill: #888888; -fx-font-size: 13px;"/>
+                    <ComboBox fx:id="cmbCuentaOrigen" onAction="#actualizarSaldo" promptText="Selecciona tu cuenta..." prefWidth="500" style="-fx-background-color: #FFFFFF; -fx-border-color: #CCCCCC; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 6;"/>
+                    <Label fx:id="lblSaldoDisponible" text="Saldo Disponible: S/ 0.00" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #1D52A8;"/>
                 </VBox>
-                <VBox spacing="8">
-                    <Label text="Número de Cuenta Destino *" style="-fx-text-fill: #90a4ae; -fx-font-size: 14px;"/>
-                    <TextField fx:id="txtCuentaDestino" promptText="Ej: CTA-123456" prefHeight="45" style="-fx-background-color: #0f3460; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-size: 14px;"/>
+                <VBox spacing="5">
+                    <Label text="Número de Cuenta Destino *" style="-fx-text-fill: #888888; -fx-font-size: 13px;"/>
+                    <TextField fx:id="txtCuentaDestino" promptText="Ej: 4532-XXXX-XXXX" style="-fx-background-color: #FFFFFF; -fx-border-color: #CCCCCC; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 8; -fx-font-size: 14px; -fx-text-fill: #1A1A1A;"/>
                 </VBox>
-                <VBox spacing="8">
-                    <Label text="Monto a Transferir (S/) *" style="-fx-text-fill: #90a4ae; -fx-font-size: 14px;"/>
-                    <TextField fx:id="txtMonto" promptText="0.00" prefHeight="45" style="-fx-background-color: #0f3460; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-size: 14px; -fx-font-weight: bold;"/>
+                <VBox spacing="5">
+                    <Label text="Monto a Transferir (S/) *" style="-fx-text-fill: #888888; -fx-font-size: 13px;"/>
+                    <TextField fx:id="txtMonto" promptText="0.00" style="-fx-background-color: #FFFFFF; -fx-border-color: #CCCCCC; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 8; -fx-font-size: 14px; -fx-text-fill: #1A1A1A; -fx-font-weight: bold;"/>
                 </VBox>
-                <VBox spacing="8">
-                    <Label text="Descripción (Opcional)" style="-fx-text-fill: #90a4ae; -fx-font-size: 14px;"/>
-                    <TextField fx:id="txtDescripcion" promptText="Motivo de la transferencia" prefHeight="45" style="-fx-background-color: #0f3460; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-size: 14px;"/>
+                <VBox spacing="5">
+                    <Label text="Descripción (Opcional)" style="-fx-text-fill: #888888; -fx-font-size: 13px;"/>
+                    <TextField fx:id="txtDescripcion" promptText="Motivo del envío" style="-fx-background-color: #FFFFFF; -fx-border-color: #CCCCCC; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 8; -fx-font-size: 14px; -fx-text-fill: #1A1A1A;"/>
                 </VBox>
-                <Label fx:id="lblMensaje" text="" style="-fx-font-size: 14px;" alignment="CENTER" prefWidth="Infinity"/>
-                <Button text="Enviar Dinero" onAction="#realizarTransferencia" prefWidth="Infinity" prefHeight="50" style="-fx-background-color: #66bb6a; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;"/>
+                <Region prefHeight="10"/>
+                <Label fx:id="lblMensaje" text="" style="-fx-text-fill: #43A047; -fx-font-size: 14px;" alignment="CENTER"/>
+                <Button text="Enviar Dinero" onAction="#realizarTransferencia" prefWidth="500" prefHeight="50" style="-fx-background-color: #1D52A8; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;"/>
             </VBox>
         </VBox>
     </center>

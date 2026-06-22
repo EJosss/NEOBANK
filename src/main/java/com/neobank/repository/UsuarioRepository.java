@@ -9,7 +9,8 @@ import java.util.Optional;
 @JdbcRepository(dialect = Dialect.H2)
 public interface UsuarioRepository extends CrudRepository<Usuario, Long> {
 
+    // 🚀 CAMBIADO: Ahora coinciden exactamente con la variable "username"
     Optional<Usuario> findByUsername(String username);
-
     boolean existsByUsername(String username);
+
 }

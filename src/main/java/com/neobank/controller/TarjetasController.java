@@ -3,7 +3,6 @@ package com.neobank.controller;
 import com.neobank.ApplicationContextProvider;
 import com.neobank.model.CuentaBancaria;
 import com.neobank.model.Tarjeta;
-import com.neobank.model.Usuario;
 import com.neobank.model.enums.EstadoTarjeta;
 import com.neobank.model.enums.TipoTarjeta;
 import com.neobank.service.CuentaService;
@@ -11,22 +10,16 @@ import com.neobank.service.TarjetaService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
-
-import java.io.File;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Random;
 
-public class TarjetasController {
+public class TarjetasController extends BaseController {
 
     @FXML private Label lblUsuarioMenu;
     @FXML private TableView<Tarjeta> tablaTarjetas;
@@ -42,7 +35,9 @@ public class TarjetasController {
     @FXML private TextField txtLimite;
     @FXML private Label lblMensaje;
 
-    private Usuario usuarioActual;
+    @FXML private Button btnBloquear;
+    @FXML private Button btnMenuDashboard;
+
     private TarjetaService tarjetaService;
     private CuentaService cuentaService;
 
@@ -52,12 +47,18 @@ public class TarjetasController {
         cuentaService = ApplicationContextProvider.getBean(CuentaService.class);
         configurarTabla();
         cargarDatos();
+        configurarLimpiezaAutomatica(lblMensaje, cmbCuentas, cmbTipo, txtLimite);
     }
 
-    public void setUsuario(Usuario usuario) {
-        this.usuarioActual = usuario;
-        if (lblUsuarioMenu != null && usuario != null) {
-            lblUsuarioMenu.setText(usuario.getNombre() + " | " + usuario.getRol());
+    @Override
+    protected void actualizarInfoUsuario() {
+        if (lblUsuarioMenu != null && usuarioActual != null) {
+            lblUsuarioMenu.setText(usuarioActual.getNombre() + " | " + usuarioActual.getRol());
+
+            if (usuarioActual.getRol() == com.neobank.model.enums.RolUsuario.CAJERO) {
+                if (btnBloquear != null) { btnBloquear.setVisible(false); btnBloquear.setManaged(false); }
+                if (btnMenuDashboard != null) { btnMenuDashboard.setVisible(false); btnMenuDashboard.setManaged(false); }
+            }
         }
     }
 
@@ -92,7 +93,7 @@ public class TarjetasController {
                     setText(null); setStyle("");
                 } else {
                     setText(item);
-                    setStyle(item.equals("ACTIVA") ? "-fx-text-fill: #66bb6a; -fx-font-weight: bold;" : "-fx-text-fill: #ef5350; -fx-font-weight: bold;");
+                    setStyle(item.equals("ACTIVA") ? "-fx-text-fill: #43A047; -fx-font-weight: bold;" : "-fx-text-fill: #E53935; -fx-font-weight: bold;");
                 }
             }
         });
@@ -113,38 +114,42 @@ public class TarjetasController {
         cmbCuentas.getSelectionModel().clearSelection();
         cmbTipo.getSelectionModel().clearSelection();
         txtLimite.clear();
+        limpiarBordes(cmbCuentas, cmbTipo, txtLimite);
         panelFormulario.setVisible(true);
         panelFormulario.setManaged(true);
         lblMensaje.setText("");
     }
 
-    // 🚀 VALIDACIONES DE TARJETAS
     @FXML private void guardarTarjeta() {
-        CuentaBancaria cuenta = cmbCuentas.getValue();
-        TipoTarjeta tipo = cmbTipo.getValue();
+        limpiarBordes(cmbCuentas, cmbTipo, txtLimite);
+        boolean hayError = false;
 
-        if (cuenta == null || tipo == null) {
-            mostrarMensaje("⚠ Selecciona una cuenta y el tipo de tarjeta.", false);
+        if (cmbCuentas.getValue() == null) { marcarCampoErroneo(cmbCuentas); hayError = true; }
+        if (cmbTipo.getValue() == null) { marcarCampoErroneo(cmbTipo); hayError = true; }
+
+        if (hayError) {
+            mostrarNotificacionError("Campos Obligatorios", "Complete la información de cuenta y tipo de tarjeta.");
             return;
         }
 
+        CuentaBancaria cuenta = cmbCuentas.getValue();
+        TipoTarjeta tipo = cmbTipo.getValue();
         BigDecimal limite = BigDecimal.ZERO;
 
-        // VALIDAR: Solo pedimos límite si es de crédito
         if (tipo == TipoTarjeta.CREDITO) {
-            String limiteStr = txtLimite.getText().trim();
-            if (limiteStr.isEmpty()) {
-                mostrarMensaje("⚠ Ingresa un límite para la tarjeta de crédito.", false);
+            if (txtLimite.getText().trim().isEmpty()) {
+                marcarCampoErroneo(txtLimite);
+                mostrarNotificacionError("Límite Requerido", "Las tarjetas de crédito exigen un monto límite de operación.");
                 return;
             }
             try {
-                limite = new BigDecimal(limiteStr);
+                limite = new BigDecimal(txtLimite.getText().trim());
                 if (limite.compareTo(BigDecimal.ZERO) <= 0) {
-                    mostrarMensaje("⚠ El límite de crédito debe ser mayor a 0.", false);
+                    mostrarNotificacionError("Monto Inválido", "El límite de crédito tiene que ser estrictamente superior a 0.");
                     return;
                 }
             } catch (NumberFormatException e) {
-                mostrarMensaje("⚠ Límite inválido. Ingresa solo números.", false);
+                mostrarNotificacionError("Formato de Monto", "El campo límite solo acepta valores numéricos.");
                 return;
             }
         }
@@ -163,21 +168,29 @@ public class TarjetasController {
         nueva.setCcv(ccv);
         nueva.setEstado(EstadoTarjeta.ACTIVA);
 
-        tarjetaService.guardar(nueva);
-        cargarDatos();
-        panelFormulario.setVisible(false);
-        panelFormulario.setManaged(false);
-        mostrarMensaje("✔ Tarjeta " + numero + " emitida con éxito", true);
+        try {
+            tarjetaService.guardar(nueva, usuarioActual);
+            cargarDatos();
+            panelFormulario.setVisible(false);
+            panelFormulario.setManaged(false);
+            mostrarNotificacionExito("Emisión Exitosa", "La tarjeta " + tipo.name() + " número '" + numero + "' ha sido generada correctamente.");
+        } catch (IllegalArgumentException e) {
+            mostrarNotificacionError("Restricción de Emisión", e.getMessage());
+        }
     }
 
     @FXML private void bloquearTarjeta() {
         Tarjeta sel = tablaTarjetas.getSelectionModel().getSelectedItem();
         if (sel != null && sel.getEstado() == EstadoTarjeta.ACTIVA) {
-            tarjetaService.bloquear(sel.getId());
-            cargarDatos();
-            mostrarMensaje("✔ Tarjeta bloqueada", true);
+            try {
+                tarjetaService.bloquear(sel.getId(), usuarioActual);
+                cargarDatos();
+                mostrarNotificacionExito("Bloqueo Realizado", "La tarjeta '" + sel.getNumeroTarjeta() + "' ha sido dada de baja (BLOQUEADA) con éxito.");
+            } catch (IllegalArgumentException e) {
+                mostrarNotificacionError("Restricción de Acceso", e.getMessage());
+            }
         } else {
-            mostrarMensaje("⚠ Selecciona una tarjeta activa para bloquear", false);
+            mostrarNotificacionError("Selección Inválida", "Marque una tarjeta que se encuentre en estado ACTIVA para inhabilitarla.");
         }
     }
 
@@ -186,35 +199,11 @@ public class TarjetasController {
         panelFormulario.setManaged(false);
     }
 
-    private void mostrarMensaje(String msg, boolean exito) {
-        lblMensaje.setStyle(exito ? "-fx-text-fill: #66bb6a;" : "-fx-text-fill: #ef5350;");
-        lblMensaje.setText(msg);
-    }
-
-    private void navegar(String fxml, int w, int h) {
-        try {
-            String ruta = System.getProperty("user.dir") + "/src/main/resources/fxml/" + fxml;
-            FXMLLoader loader = new FXMLLoader(new File(ruta).toURI().toURL());
-            Parent root = loader.load();
-            Object ctrl = loader.getController();
-
-            if (ctrl instanceof DashboardController dc) dc.setUsuario(usuarioActual);
-            else if (ctrl instanceof ClientesController cc) cc.setUsuario(usuarioActual);
-            else if (ctrl instanceof CuentasController cu) cu.setUsuario(usuarioActual);
-            else if (ctrl instanceof MovimientosController mc) mc.setUsuario(usuarioActual);
-            else if (ctrl instanceof TransferenciasController tc) tc.setUsuario(usuarioActual);
-            else if (ctrl instanceof TarjetasController tarc) tarc.setUsuario(usuarioActual);
-
-            Stage stage = (Stage) lblUsuarioMenu.getScene().getWindow();
-            stage.setScene(new Scene(root, w, h));
-        } catch (Exception e) { e.printStackTrace(); }
-    }
-
-    @FXML private void irDashboard() { navegar("Dashboard.fxml", 1280, 720); }
-    @FXML private void irClientes() { navegar("Clientes.fxml", 1280, 720); }
-    @FXML private void irCuentas() { navegar("Cuentas.fxml", 1280, 720); }
-    @FXML private void irMovimientos() { navegar("Movimientos.fxml", 1280, 720); }
-    @FXML private void irTransferencias() { navegar("Transferencias.fxml", 1280, 720); }
+    @FXML private void irDashboard() { navegar(lblUsuarioMenu, "Dashboard.fxml", 1280, 720); }
+    @FXML private void irClientes() { navegar(lblUsuarioMenu, "Clientes.fxml", 1280, 720); }
+    @FXML private void irCuentas() { navegar(lblUsuarioMenu, "Cuentas.fxml", 1280, 720); }
+    @FXML private void irMovimientos() { navegar(lblUsuarioMenu, "Movimientos.fxml", 1280, 720); }
+    @FXML private void irTransferencias() { navegar(lblUsuarioMenu, "Transferencias.fxml", 1280, 720); }
     @FXML private void irTarjetas() { }
-    @FXML private void cerrarSesion() { navegar("Login.fxml", 900, 600); }
+    @FXML private void cerrarSesion() { navegar(lblUsuarioMenu, "Login.fxml", 900, 600); }
 }

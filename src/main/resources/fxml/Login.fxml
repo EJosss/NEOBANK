@@ -1,99 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
 
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.PasswordField?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Separator?>
-
-<BorderPane
-        xmlns:fx="http://javafx.com/fxml"
-        fx:controller="com.neobank.controller.LoginController"
-        prefWidth="900"
-        prefHeight="600"
-        style="-fx-background-color: #1a1a2e;">
-
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.neobank.controller.LoginController" prefWidth="900" prefHeight="600" style="-fx-background-color: #FFFFFF;">
     <center>
-        <VBox
-                alignment="CENTER"
-                spacing="18"
-                maxWidth="380"
-                style="-fx-background-color: #16213e;
-                   -fx-background-radius: 15;
-                   -fx-padding: 45;">
+        <StackPane>
 
-            <Label
-                    text="🏦 NeoBank System"
-                    style="-fx-font-size: 26px;
-                       -fx-font-weight: bold;
-                       -fx-text-fill: #4fc3f7;"/>
+            <!-- PANEL 1: FORMULARIO DE LOGIN ESTRICTO -->
+            <VBox fx:id="panelLogin" alignment="CENTER" spacing="25" maxWidth="380" style="-fx-background-color: #FFFFFF; -fx-padding: 40;">
 
-            <Label
-                    text="Sistema de Gestión Bancaria"
-                    style="-fx-font-size: 12px;
-                       -fx-text-fill: #90a4ae;"/>
+                <!-- Logo actualizado -->
+                <VBox alignment="CENTER" spacing="10">
+                    <Label text="⬢ NeoBank" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #1D52A8;"/>
+                    <Label text="Bienvenido" style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1A1A1A;"/>
+                    <Label text="Portal de empleados. Inicie sesión con sus credenciales autorizadas." wrapText="true" textAlignment="CENTER" style="-fx-font-size: 13px; -fx-text-fill: #666666;"/>
+                </VBox>
 
-            <Separator prefWidth="300"/>
+                <Region prefHeight="10"/>
 
-            <Label
-                    text="Usuario"
-                    style="-fx-text-fill: #90a4ae;
-                       -fx-font-size: 12px;"/>
+                <VBox spacing="5">
+                    <Label text="Usuario" style="-fx-text-fill: #888888; -fx-font-size: 13px;"/>
+                    <TextField fx:id="txtUsuario" style="-fx-background-color: transparent; -fx-border-color: transparent transparent #CCCCCC transparent; -fx-border-width: 0 0 1 0; -fx-padding: 5 0 5 0; -fx-font-size: 15px; -fx-text-fill: #1A1A1A;"/>
+                </VBox>
 
-            <TextField
-                    fx:id="txtUsuario"
-                    promptText="Ingresa tu usuario"
-                    prefWidth="300"
-                    prefHeight="40"
-                    style="-fx-background-color: #0f3460;
-                       -fx-text-fill: white;
-                       -fx-prompt-text-fill: #546e7a;
-                       -fx-background-radius: 8;
-                       -fx-padding: 10;
-                       -fx-font-size: 13px;"/>
+                <VBox spacing="5">
+                    <Label text="Contraseña" style="-fx-text-fill: #888888; -fx-font-size: 13px;"/>
+                    <PasswordField fx:id="txtPassword" style="-fx-background-color: transparent; -fx-border-color: transparent transparent #CCCCCC transparent; -fx-border-width: 0 0 1 0; -fx-padding: 5 0 5 0; -fx-font-size: 15px; -fx-text-fill: #1A1A1A;"/>
+                </VBox>
 
-            <Label
-                    text="Contraseña"
-                    style="-fx-text-fill: #90a4ae;
-                       -fx-font-size: 12px;"/>
+                <Label fx:id="lblError" text="" style="-fx-text-fill: #E53935; -fx-font-size: 13px;"/>
 
-            <PasswordField
-                    fx:id="txtPassword"
-                    promptText="Ingresa tu contraseña"
-                    prefWidth="300"
-                    prefHeight="40"
-                    style="-fx-background-color: #0f3460;
-                       -fx-text-fill: white;
-                       -fx-prompt-text-fill: #546e7a;
-                       -fx-background-radius: 8;
-                       -fx-padding: 10;
-                       -fx-font-size: 13px;"/>
+                <Region prefHeight="5"/>
 
-            <Label
-                    fx:id="lblError"
-                    text=""
-                    style="-fx-text-fill: #ef5350;
-                       -fx-font-size: 12px;"/>
+                <!-- Botón Principal de Acceso -->
+                <Button text="Iniciar sesión" onAction="#handleLogin" prefWidth="380" prefHeight="45" style="-fx-background-color: #1D52A8; -fx-text-fill: white; -fx-font-size: 15px; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;"/>
 
-            <Button
-                    fx:id="btnLogin"
-                    text="INGRESAR"
-                    onAction="#handleLogin"
-                    prefWidth="300"
-                    prefHeight="42"
-                    style="-fx-background-color: #4fc3f7;
-                       -fx-text-fill: #1a1a2e;
-                       -fx-font-weight: bold;
-                       -fx-font-size: 13px;
-                       -fx-background-radius: 8;
-                       -fx-cursor: hand;"/>
+            </VBox>
 
-            <Label
-                    text="NeoBank S.A. © 2026"
-                    style="-fx-text-fill: #37474f;
-                       -fx-font-size: 11px;"/>
-        </VBox>
+            <!-- PANEL 2: PANTALLA DE CARGA CON SPINNER -->
+            <VBox fx:id="panelCarga" alignment="CENTER" spacing="20" maxWidth="380" visible="false" managed="false" style="-fx-background-color: #FFFFFF; -fx-padding: 40;">
+                <ProgressIndicator prefWidth="60" prefHeight="60" style="-fx-progress-color: #1D52A8;"/>
+                <Label text="Verificando credenciales..." style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1D52A8;"/>
+                <Label fx:id="lblCargaMensaje" text="Conectando de forma segura..." textAlignment="CENTER" wrapText="true" style="-fx-font-size: 14px; -fx-text-fill: #666666;"/>
+            </VBox>
+
+        </StackPane>
     </center>
 </BorderPane>

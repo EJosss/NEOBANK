@@ -21,7 +21,7 @@
     <micronaut.runtime>none</micronaut.runtime>
     <micronaut.aot.enabled>false</micronaut.aot.enabled>
     <micronaut.aot.packageName>com.neobank.aot.generated</micronaut.aot.packageName>
-    <exec.mainClass>com.neobank.Application</exec.mainClass>
+    <exec.mainClass>com.neobank.Main</exec.mainClass>
   </properties>
 
   <repositories>

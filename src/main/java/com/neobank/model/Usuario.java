@@ -4,29 +4,28 @@ import com.neobank.model.enums.RolUsuario;
 import io.micronaut.data.annotation.*;
 import io.micronaut.data.model.naming.NamingStrategies;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @MappedEntity(
         value = "usuario",
         namingStrategy = NamingStrategies.UnderScoreSeparatedLowerCase.class
 )
 @Data
-@Builder
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Usuario {
+@SuperBuilder
+public class Usuario extends Persona {
 
     @Id
     @GeneratedValue(GeneratedValue.Type.AUTO)
     private Long id;
 
-    private String nombre;
-    private String dni;
-    private String telefono;
-    private String correo;
     private String username;
     private String password;
+
+    // 🚀 Ahora sí usamos tu Enum para mayor seguridad en los tipos
     private RolUsuario rol;
 
-    // CORRECCIÓN: boolean con "b" minúscula para que Lombok genere isActivo()
-    private boolean activo = true;
+    private boolean activo;
 }

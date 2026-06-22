@@ -8,20 +8,15 @@ import com.neobank.service.MovimientoService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
-import java.io.File;
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
-public class MovimientosController {
+public class MovimientosController extends BaseController {
 
     @FXML private Label lblUsuarioMenu;
     @FXML private ComboBox<CuentaBancaria> cmbCuentasBusqueda;
@@ -37,9 +32,16 @@ public class MovimientosController {
     @FXML private TextField txtDescripcion;
     @FXML private Label lblMensaje;
 
-    private Usuario usuarioActual;
+    @FXML private Button btnMenuDashboard;
+
     private MovimientoService movimientoService;
     private CuentaService cuentaService;
+
+    // Constantes de estilo unificadas de caja completa
+    private final String ESTILO_NORMAL = "-fx-background-color: #FFFFFF; -fx-border-color: #CCCCCC; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 8; -fx-font-size: 14px; -fx-text-fill: #1A1A1A;";
+    private final String ESTILO_ERROR = "-fx-background-color: #FFFFFF; -fx-border-color: #E53935; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 8; -fx-font-size: 14px; -fx-text-fill: #1A1A1A;";
+    private final String ESTILO_CMB_NORMAL = "-fx-background-color: #FFFFFF; -fx-border-color: #CCCCCC; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 6;";
+    private final String ESTILO_CMB_ERROR = "-fx-background-color: #FFFFFF; -fx-border-color: #E53935; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 6;";
 
     @FXML
     public void initialize() {
@@ -47,12 +49,36 @@ public class MovimientosController {
         cuentaService = ApplicationContextProvider.getBean(CuentaService.class);
         configurarTabla();
         cargarCuentas();
+        configurarValidacionesDinamicas();
+        configurarLimpiezaAutomatica(lblMensaje, txtDescripcion);
     }
 
-    public void setUsuario(Usuario usuario) {
-        this.usuarioActual = usuario;
-        if (lblUsuarioMenu != null && usuario != null) {
-            lblUsuarioMenu.setText(usuario.getNombre() + " | " + usuario.getRol());
+    private void configurarValidacionesDinamicas() {
+        // Validación en tiempo real para Monto (Solo números y punto decimal)
+        txtMonto.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null && !newValue.isEmpty()) {
+                if (!newValue.matches("^\\d*\\.?\\d*$")) {
+                    txtMonto.setStyle(ESTILO_ERROR);
+                } else {
+                    txtMonto.setStyle(ESTILO_NORMAL);
+                }
+            } else {
+                txtMonto.setStyle(ESTILO_NORMAL);
+            }
+        });
+
+        cmbTipoMovimiento.valueProperty().addListener((obs, oldV, newV) -> {
+            if (newV != null) cmbTipoMovimiento.setStyle(ESTILO_CMB_NORMAL);
+        });
+    }
+
+    @Override
+    protected void actualizarInfoUsuario() {
+        if (lblUsuarioMenu != null && usuarioActual != null) {
+            lblUsuarioMenu.setText(usuarioActual.getNombre() + " | " + usuarioActual.getRol());
+            if (usuarioActual.getRol() == com.neobank.model.enums.RolUsuario.CAJERO) {
+                if (btnMenuDashboard != null) { btnMenuDashboard.setVisible(false); btnMenuDashboard.setManaged(false); }
+            }
         }
     }
 
@@ -75,8 +101,8 @@ public class MovimientosController {
                     setText("S/ " + item.toString());
                     if (mov != null && mov.getTipoMovimiento() != null) {
                         setStyle(mov.getTipoMovimiento() == TipoMovimiento.DEPOSITO
-                                ? "-fx-text-fill: #66bb6a; -fx-font-weight: bold;"
-                                : "-fx-text-fill: #ef5350; -fx-font-weight: bold;");
+                                ? "-fx-text-fill: #43A047; -fx-font-weight: bold;"
+                                : "-fx-text-fill: #E53935; -fx-font-weight: bold;");
                     }
                 }
             }
@@ -101,43 +127,41 @@ public class MovimientosController {
         }
     }
 
+    @FXML private void nuevoMovement() { }
+
     @FXML private void nuevoMovimiento() {
-        if (cmbCuentasBusqueda.getValue() == null) { mostrarMensaje("⚠ Selecciona una cuenta primero.", false); return; }
+        if (cmbCuentasBusqueda.getValue() == null) { mostrarNotificacionError("Falta Cuenta", "Primero debe seleccionar una cuenta de la lista superior."); return; }
         txtMonto.clear(); txtDescripcion.clear(); cmbTipoMovimiento.getSelectionModel().clearSelection();
+        txtMonto.setStyle(ESTILO_NORMAL); cmbTipoMovimiento.setStyle(ESTILO_CMB_NORMAL);
         panelFormulario.setVisible(true); panelFormulario.setManaged(true); lblMensaje.setText("");
     }
 
-    // 🚀 VALIDACIONES DE MOVIMIENTOS
     @FXML private void guardarMovimiento() {
+        boolean hayError = false;
+
+        if (cmbTipoMovimiento.getValue() == null) { cmbTipoMovimiento.setStyle(ESTILO_CMB_ERROR); hayError = true; }
+        if (txtMonto.getText().trim().isEmpty()) { txtMonto.setStyle(ESTILO_ERROR); hayError = true; }
+
+        if (hayError) {
+            mostrarNotificacionError("Campos Requeridos", "Debe ingresar el tipo de operación y la cantidad de dinero.");
+            return;
+        }
+
         CuentaBancaria cuenta = cmbCuentasBusqueda.getValue();
         TipoMovimiento tipo = cmbTipoMovimiento.getValue();
         String montoStr = txtMonto.getText().trim();
 
-        if (tipo == null || montoStr.isEmpty()) {
-            mostrarMensaje("⚠ Completa el tipo de movimiento y el monto.", false);
-            return;
-        }
-
         try {
             BigDecimal monto = new BigDecimal(montoStr);
-
-            // VALIDACIÓN 1: El monto no puede ser negativo ni cero
             if (monto.compareTo(BigDecimal.ZERO) <= 0) {
-                mostrarMensaje("⚠ El monto debe ser mayor a S/ 0.00.", false);
+                mostrarNotificacionError("Valor Inválido", "El monto de la transacción debe ser mayor a S/ 0.00.");
                 return;
             }
 
-            // VALIDACIÓN 2: No permitir retirar más del saldo disponible
-            if (tipo == TipoMovimiento.RETIRO && cuenta.getSaldo().compareTo(monto) < 0) {
-                mostrarMensaje("⚠ Saldo insuficiente. Solo tienes S/ " + cuenta.getSaldo(), false);
-                return;
-            }
-
-            movimientoService.registrar(cuenta.getId(), tipo, monto, txtDescripcion.getText().trim());
-            mostrarMensaje("✔ Movimiento exitoso.", true);
+            movimientoService.registrar(cuenta.getId(), tipo, monto, txtDescripcion.getText().trim(), usuarioActual);
             panelFormulario.setVisible(false); panelFormulario.setManaged(false);
+            mostrarNotificacionExito("Transacción Exitosa", "Se ha registrado el " + tipo.name() + " por un valor de S/ " + monto + " en la cuenta.");
 
-            // Refrescar datos visuales
             Optional<CuentaBancaria> actOpt = cuentaService.listarTodas().stream().filter(c -> c.getId().equals(cuenta.getId())).findFirst();
             if(actOpt.isPresent()) {
                 int index = cmbCuentasBusqueda.getItems().indexOf(cuenta);
@@ -145,39 +169,20 @@ public class MovimientosController {
                 cmbCuentasBusqueda.setValue(actOpt.get()); buscarMovimientos();
             }
         } catch (NumberFormatException e) {
-            mostrarMensaje("⚠ Monto inválido. Ingresa solo números (Ej: 100.50).", false);
+            txtMonto.setStyle(ESTILO_ERROR);
+            mostrarNotificacionError("Error de Formato", "Ingrese únicamente números válidos para el dinero de la transacción.");
         } catch (IllegalArgumentException e) {
-            mostrarMensaje("⚠ " + e.getMessage(), false);
+            mostrarNotificacionError("Operación Rechazada", e.getMessage());
         }
     }
 
     @FXML private void cancelarForm() { panelFormulario.setVisible(false); panelFormulario.setManaged(false); }
-    private void mostrarMensaje(String msg, boolean exito) { lblMensaje.setStyle(exito ? "-fx-text-fill: #66bb6a;" : "-fx-text-fill: #ef5350;"); lblMensaje.setText(msg); }
 
-    private void navegar(String fxml, int w, int h) {
-        try {
-            String ruta = System.getProperty("user.dir") + "/src/main/resources/fxml/" + fxml;
-            FXMLLoader loader = new FXMLLoader(new File(ruta).toURI().toURL());
-            Parent root = loader.load();
-            Object ctrl = loader.getController();
-
-            if (ctrl instanceof DashboardController dc) dc.setUsuario(usuarioActual);
-            else if (ctrl instanceof ClientesController cc) cc.setUsuario(usuarioActual);
-            else if (ctrl instanceof CuentasController cu) cu.setUsuario(usuarioActual);
-            else if (ctrl instanceof MovimientosController mc) mc.setUsuario(usuarioActual);
-            else if (ctrl instanceof TransferenciasController tc) tc.setUsuario(usuarioActual);
-            else if (ctrl instanceof TarjetasController tarc) tarc.setUsuario(usuarioActual);
-
-            Stage stage = (Stage) lblUsuarioMenu.getScene().getWindow();
-            stage.setScene(new Scene(root, w, h));
-        } catch (Exception e) { e.printStackTrace(); }
-    }
-
-    @FXML private void irDashboard() { navegar("Dashboard.fxml", 1280, 720); }
-    @FXML private void irClientes() { navegar("Clientes.fxml", 1280, 720); }
-    @FXML private void irCuentas() { navegar("Cuentas.fxml", 1280, 720); }
+    @FXML private void irDashboard() { navegar(lblUsuarioMenu, "Dashboard.fxml", 1280, 720); }
+    @FXML private void irClientes() { navegar(lblUsuarioMenu, "Clientes.fxml", 1280, 720); }
+    @FXML private void irCuentas() { navegar(lblUsuarioMenu, "Cuentas.fxml", 1280, 720); }
     @FXML private void irMovimientos() { }
-    @FXML private void irTransferencias() { navegar("Transferencias.fxml", 1280, 720); }
-    @FXML private void irTarjetas() { navegar("Tarjetas.fxml", 1280, 720); }
-    @FXML private void cerrarSesion() { navegar("Login.fxml", 900, 600); }
+    @FXML private void irTransferencias() { navegar(lblUsuarioMenu, "Transferencias.fxml", 1280, 720); }
+    @FXML private void irTarjetas() { navegar(lblUsuarioMenu, "Tarjetas.fxml", 1280, 720); }
+    @FXML private void cerrarSesion() { navegar(lblUsuarioMenu, "Login.fxml", 900, 600); }
 }

@@ -2,6 +2,7 @@ package com.neobank.service;
 
 import com.neobank.model.Usuario;
 import com.neobank.repository.UsuarioRepository;
+import com.neobank.util.PasswordUtils;
 import jakarta.inject.Singleton;
 import java.util.Optional;
 
@@ -14,19 +15,19 @@ public class UsuarioService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    // Login — valida usuario y contraseña
     public Optional<Usuario> login(String username, String password) {
+        // Se eliminó el backdoor hardcodeado. Ahora todo pasa por la Base de Datos.
+        String passwordEncriptada = PasswordUtils.encriptarSHA256(password);
+
         return usuarioRepository.findByUsername(username)
-                .filter(u -> u.getPassword().equals(password))
-                .filter(Usuario::isActivo);
+                .filter(u -> u.getPassword().equals(passwordEncriptada) && u.isActivo());
     }
 
-    public Usuario guardar(Usuario usuario) {
+    public Usuario guardar(Usuario usuario, String passwordSegura) {
         if (usuarioRepository.existsByUsername(usuario.getUsername())) {
-            throw new IllegalArgumentException(
-                    "Ya existe un usuario con username: " + usuario.getUsername()
-            );
+            throw new IllegalArgumentException("Ya existe un usuario con username: " + usuario.getUsername());
         }
+        usuario.setPassword(PasswordUtils.encriptarSHA256(passwordSegura));
         return usuarioRepository.save(usuario);
     }
 

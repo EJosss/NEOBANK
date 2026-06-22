@@ -7,23 +7,19 @@ import com.neobank.service.ClienteService;
 import com.neobank.service.CuentaService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
-
-import java.io.File;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Random;
 
-public class CuentasController {
+public class CuentasController extends BaseController {
 
     @FXML private Label lblUsuarioMenu;
     @FXML private TableView<CuentaBancaria> tablaCuentas;
@@ -41,9 +37,15 @@ public class CuentasController {
     @FXML private ComboBox<TipoCuenta> cmbTipo;
     @FXML private Label lblErrorForm;
 
-    private Usuario usuarioActual;
+    @FXML private Button btnEliminar;
+    @FXML private Button btnMenuDashboard;
+    @FXML private CheckBox chkVerCerradas;
+
     private CuentaService cuentaService;
     private ClienteService clienteService;
+
+    // Lista observable para gestionar el filtrado dinámico
+    private ObservableList<CuentaBancaria> listaCuentasMaster = FXCollections.observableArrayList();
 
     @FXML
     public void initialize() {
@@ -52,16 +54,52 @@ public class CuentasController {
         configurarTabla();
         cargarDatos();
         configurarMenuContextual();
+        configurarBusquedaEnTiempoReal(); // 🚀 Activamos el súper filtro
+        configurarLimpiezaAutomatica(lblErrorForm, cmbClientes, cmbTipo);
     }
 
-    public void setUsuario(Usuario usuario) {
-        this.usuarioActual = usuario;
-        if (lblUsuarioMenu != null && usuario != null) {
-            lblUsuarioMenu.setText(usuario.getNombre() + " | " + usuario.getRol());
+    private void configurarBusquedaEnTiempoReal() {
+        FilteredList<CuentaBancaria> listaFiltrada = new FilteredList<>(listaCuentasMaster, cuenta -> cuenta.getEstado() == EstadoCuenta.ACTIVA);
+
+        // Función unificada que evalúa ambos componentes reactivos
+        Runnable actualizarFiltro = () -> {
+            String textoBusqueda = txtBuscar.getText() != null ? txtBuscar.getText().toLowerCase().trim() : "";
+            boolean mostrarCerradas = chkVerCerradas.isSelected();
+
+            listaFiltrada.setPredicate(cuenta -> {
+                // 1. Condición de Estado Dinámica
+                EstadoCuenta estadoEsperado = mostrarCerradas ? EstadoCuenta.CERRADA : EstadoCuenta.ACTIVA;
+                if (cuenta.getEstado() != estadoEsperado) {
+                    return false;
+                }
+
+                // 2. Condición de Texto
+                if (textoBusqueda.isEmpty()) {
+                    return true;
+                }
+                return cuenta.getNumeroCuenta() != null && cuenta.getNumeroCuenta().toLowerCase().contains(textoBusqueda);
+            });
+        };
+
+        // Vinculamos los escuchadores al activador
+        txtBuscar.textProperty().addListener((observable, oldValue, newValue) -> actualizarFiltro.run());
+        chkVerCerradas.selectedProperty().addListener((observable, oldValue, newValue) -> actualizarFiltro.run());
+
+        tablaCuentas.setItems(listaFiltrada);
+    }
+
+    @Override
+    protected void actualizarInfoUsuario() {
+        if (lblUsuarioMenu != null && usuarioActual != null) {
+            lblUsuarioMenu.setText(usuarioActual.getNombre() + " | " + usuarioActual.getRol());
+
+            if (usuarioActual.getRol() == com.neobank.model.enums.RolUsuario.CAJERO) {
+                if (btnEliminar != null) { btnEliminar.setVisible(false); btnEliminar.setManaged(false); }
+                if (btnMenuDashboard != null) { btnMenuDashboard.setVisible(false); btnMenuDashboard.setManaged(false); }
+            }
         }
     }
 
-    // 🚀 AQUÍ CREAMOS EL CLIC DERECHO PARA COPIAR EL NÚMERO
     private void configurarMenuContextual() {
         ContextMenu contextMenu = new ContextMenu();
         MenuItem copiarItem = new MenuItem("📋 Copiar Número de Cuenta");
@@ -73,9 +111,9 @@ public class CuentasController {
                 ClipboardContent content = new ClipboardContent();
                 content.putString(cuenta.getNumeroCuenta());
                 clipboard.setContent(content);
-                mostrarMensaje("✔ Número copiado: " + cuenta.getNumeroCuenta(), true);
+                mostrarNotificacionExito("Copiado al Portapapeles", "El número de cuenta " + cuenta.getNumeroCuenta() + " está listo para usarse.");
             } else {
-                mostrarMensaje("⚠ Selecciona una cuenta primero", false);
+                mostrarNotificacionError("Selección Requerida", "Por favor seleccione una cuenta.");
             }
         });
 
@@ -111,66 +149,66 @@ public class CuentasController {
 
     private void cargarDatos() {
         List<CuentaBancaria> cuentas = cuentaService.listarTodas();
-        tablaCuentas.setItems(FXCollections.observableArrayList(cuentas));
+        listaCuentasMaster.setAll(cuentas);
+        // Si no se está buscando nada, la tabla muestra la lista master inicial
+        if (txtBuscar.getText().trim().isEmpty()) {
+            tablaCuentas.setItems(listaCuentasMaster);
+        }
     }
 
-    @FXML private void mostrarTodas() { cargarDatos(); }
+    @FXML private void mostrarTodas() { txtBuscar.clear(); cargarDatos(); }
 
     @FXML private void nuevaCuenta() {
         cmbClientes.setItems(FXCollections.observableArrayList(clienteService.listarTodos()));
         cmbTipo.setItems(FXCollections.observableArrayList(TipoCuenta.values()));
         cmbClientes.getSelectionModel().clearSelection(); cmbTipo.getSelectionModel().clearSelection();
-        lblErrorForm.setText(""); mostrarFormulario(true);
+        panelFormulario.setVisible(true); panelFormulario.setManaged(true);
+        lblErrorForm.setText("");
     }
 
     @FXML private void guardarCuenta() {
-        Cliente cliente = cmbClientes.getValue(); TipoCuenta tipo = cmbTipo.getValue();
-        if (cliente == null || tipo == null) { lblErrorForm.setText("⚠ Selecciona Cliente y Tipo"); return; }
+        if (cmbClientes.getValue() == null || cmbTipo.getValue() == null) {
+            lblErrorForm.setText("⚠ Selecciona un Cliente y Tipo de Cuenta.");
+            return;
+        }
 
+        Cliente cliente = cmbClientes.getValue(); TipoCuenta tipo = cmbTipo.getValue();
         String numero = "4532-" + (1000 + new Random().nextInt(9000)) + "-" + (1000 + new Random().nextInt(9000));
+
         CuentaBancaria nuevaCuenta = new CuentaBancaria();
         nuevaCuenta.setNumeroCuenta(numero); nuevaCuenta.setIdCliente(cliente.getId());
         nuevaCuenta.setTipoCuenta(tipo); nuevaCuenta.setSaldo(BigDecimal.ZERO);
         nuevaCuenta.setEstado(EstadoCuenta.ACTIVA);
 
-        cuentaService.guardar(nuevaCuenta); cargarDatos(); mostrarFormulario(false);
-        mostrarMensaje("✔ Cuenta " + numero + " creada", true);
+        cuentaService.guardar(nuevaCuenta);
+        cargarDatos();
+        mostrarFormulario(false);
+        mostrarNotificacionExito("Apertura de Cuenta", "La cuenta número '" + numero + "' vinculada al cliente '" + cliente.getNombre() + "' fue abierta con éxito.");
     }
 
     @FXML private void eliminarCuenta() {
         CuentaBancaria sel = tablaCuentas.getSelectionModel().getSelectedItem();
         if (sel != null) {
-            cuentaService.eliminar(sel.getId()); cargarDatos(); mostrarMensaje("✔ Cuenta eliminada", true);
+            try {
+                cuentaService.eliminar(sel.getId(), usuarioActual);
+                cargarDatos();
+                mostrarNotificacionExito("Cuenta Inhabilitada", "La cuenta número '" + sel.getNumeroCuenta() + "' se encuentra ahora en estado CERRADA.");
+            } catch (IllegalArgumentException e) {
+                mostrarNotificacionError("Restricción de Acceso", e.getMessage());
+            }
+        } else {
+            mostrarNotificacionError("Selección Requerida", "Debe marcar una cuenta de la lista para proceder al cierre.");
         }
     }
 
     @FXML private void cancelarForm() { mostrarFormulario(false); }
     private void mostrarFormulario(boolean visible) { panelFormulario.setVisible(visible); panelFormulario.setManaged(visible); }
-    private void mostrarMensaje(String msg, boolean exito) { lblMensaje.setStyle(exito ? "-fx-text-fill: #66bb6a;" : "-fx-text-fill: #ef5350;"); lblMensaje.setText(msg); }
 
-    private void navegar(String fxml, int w, int h) {
-        try {
-            String ruta = System.getProperty("user.dir") + "/src/main/resources/fxml/" + fxml;
-            FXMLLoader loader = new FXMLLoader(new File(ruta).toURI().toURL());
-            Parent root = loader.load();
-            Object ctrl = loader.getController();
-
-            if (ctrl instanceof DashboardController dc) dc.setUsuario(usuarioActual);
-            else if (ctrl instanceof ClientesController cc) cc.setUsuario(usuarioActual);
-            else if (ctrl instanceof CuentasController cu) cu.setUsuario(usuarioActual);
-            else if (ctrl instanceof MovimientosController mc) mc.setUsuario(usuarioActual);
-            else if (ctrl instanceof TransferenciasController tc) tc.setUsuario(usuarioActual);
-
-            Stage stage = (Stage) lblUsuarioMenu.getScene().getWindow();
-            stage.setScene(new Scene(root, w, h));
-        } catch (Exception e) { e.printStackTrace(); }
-    }
-
-    @FXML private void irDashboard() { navegar("Dashboard.fxml", 1280, 720); }
-    @FXML private void irClientes() { navegar("Clientes.fxml", 1280, 720); }
+    @FXML private void irDashboard() { navegar(lblUsuarioMenu, "Dashboard.fxml", 1280, 720); }
+    @FXML private void irClientes() { navegar(lblUsuarioMenu, "Clientes.fxml", 1280, 720); }
     @FXML private void irCuentas() { }
-    @FXML private void irMovimientos() { navegar("Movimientos.fxml", 1280, 720); }
-    @FXML private void irTransferencias() { navegar("Transferencias.fxml", 1280, 720); }
-    @FXML private void irTarjetas() { }
-    @FXML private void cerrarSesion() { navegar("Login.fxml", 900, 600); }
+    @FXML private void irMovimientos() { navegar(lblUsuarioMenu, "Movimientos.fxml", 1280, 720); }
+    @FXML private void irTransferencias() { navegar(lblUsuarioMenu, "Transferencias.fxml", 1280, 720); }
+    @FXML private void irTarjetas() { navegar(lblUsuarioMenu, "Tarjetas.fxml", 1280, 720); }
+    @FXML private void cerrarSesion() { navegar(lblUsuarioMenu, "Login.fxml", 900, 600); }
 }
