@@ -86,4 +86,8 @@ public class DashboardController extends BaseController {
     @FXML private void irTransferencias() { navegar(lblUsuarioMenu, "Transferencias.fxml", 1280, 720); }
     @FXML private void irTarjetas() { navegar(lblUsuarioMenu, "Tarjetas.fxml", 1280, 720); }
     @FXML private void cerrarSesion() { navegar(lblUsuarioMenu, "Login.fxml", 900, 600); }
+    @FXML
+    private void irHistorial() {
+        navegar(lblUsuarioMenu, "HistorialAdmin.fxml", 1280, 720);
+    }
 }

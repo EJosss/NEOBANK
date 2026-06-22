@@ -1,25 +1,20 @@
 package com.neobank.util;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class PasswordUtils {
 
-    public static String encriptarSHA256(String passwordPlana) {
+    // Genera el hash con un "Salt" dinámico (Log rounds = 12, estándar bancario seguro)
+    public static String encriptarBCrypt(String passwordPlana) {
+        return BCrypt.hashpw(passwordPlana, BCrypt.gensalt(12));
+    }
+
+    // Verifica si la contraseña escrita en el Login coincide con el hash encriptado de la base de datos
+    public static boolean verificarPassword(String passwordPlana, String hashGuardado) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            // CRÍTICO: Usar StandardCharsets.UTF_8 garantiza que el hash sea idéntico en cualquier Sistema Operativo
-            byte[] hashBytes = digest.digest(passwordPlana.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hashBytes) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error crítico en seguridad: Algoritmo SHA-256 no disponible.", e);
+            return BCrypt.checkpw(passwordPlana, hashGuardado);
+        } catch (IllegalArgumentException e) {
+            return false; // Retorna falso si el hash guardado es antiguo o tiene mal formato
         }
     }
 }

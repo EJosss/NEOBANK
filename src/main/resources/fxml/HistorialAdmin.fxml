@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
+
+<AnchorPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #F4F6F8;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.neobank.controller.HistorialAdminController">
+    <children>
+        <VBox layoutX="30.0" layoutY="30.0" prefHeight="660.0" prefWidth="1220.0" spacing="20.0">
+            <children>
+                <HBox alignment="CENTER_LEFT" spacing="20.0">
+                    <children>
+                        <Label style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1D52A8;" text="⬢ NeoBank | Auditoría Global de Transacciones" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label fx:id="lblUsuarioMenu" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #333333;" text="Usuario | ROL" />
+                        <Button mnemonicParsing="false" onAction="#cerrarSesion" style="-fx-background-color: #E53935; -fx-text-fill: white; -fx-font-weight: bold;" text="Cerrar Sesión" />
+                    </children>
+                </HBox>
+
+                <HBox alignment="CENTER_LEFT" spacing="15.0">
+                    <children>
+                        <TextField fx:id="txtBuscarFiltro" prefHeight="35.0" prefWidth="350.0" promptText="🔍 Filtrar por Tipo de Operación (Ej. DEPOSITO)..." style="-fx-font-size: 14px; -fx-background-radius: 5;" />
+                        <Button mnemonicParsing="false" onAction="#refrescarLog" prefHeight="35.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;" text="🔄 Refrescar Bitácora" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button mnemonicParsing="false" onAction="#irDashboard" prefHeight="35.0" style="-fx-background-color: #546E7A; -fx-text-fill: white; -fx-font-weight: bold;" text="⬅ Volver al Menú Principal" />
+                    </children>
+                </HBox>
+
+                <TableView fx:id="tablaHistorialGlobal" prefHeight="530.0" prefWidth="1220.0" style="-fx-font-size: 13px;">
+                    <columns>
+                        <TableColumn fx:id="colFecha" prefWidth="160.0" text="Fecha y Hora" />
+                        <TableColumn fx:id="colOperacion" prefWidth="110.0" text="N° Operación" />
+                        <TableColumn fx:id="colCuenta" prefWidth="180.0" text="Cuenta Afectada" />
+                        <TableColumn fx:id="colCliente" prefWidth="280.0" text="Cliente (DNI - Nombre)" />
+                        <TableColumn fx:id="colTipo" prefWidth="130.0" text="Tipo Operación" />
+                        <TableColumn fx:id="colMonto" prefWidth="150.0" text="Monto Afectado" />
+                        <TableColumn fx:id="colCajero" prefWidth="190.0" text="Usuario Operador" />
+                    </columns>
+                </TableView>
+            </children>
+        </VBox>
+    </children>
+</AnchorPane>

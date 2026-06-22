@@ -16,18 +16,18 @@ public class UsuarioService {
     }
 
     public Optional<Usuario> login(String username, String password) {
-        // Se eliminó el backdoor hardcodeado. Ahora todo pasa por la Base de Datos.
-        String passwordEncriptada = PasswordUtils.encriptarSHA256(password);
-
+        // 1. Buscamos al usuario únicamente por su username
         return usuarioRepository.findByUsername(username)
-                .filter(u -> u.getPassword().equals(passwordEncriptada) && u.isActivo());
+                // 2. Filtramos: el usuario debe estar activo Y la validación BCrypt debe ser exitosa
+                .filter(u -> u.isActivo() && PasswordUtils.verificarPassword(password, u.getPassword()));
     }
 
     public Usuario guardar(Usuario usuario, String passwordSegura) {
         if (usuarioRepository.existsByUsername(usuario.getUsername())) {
             throw new IllegalArgumentException("Ya existe un usuario con username: " + usuario.getUsername());
         }
-        usuario.setPassword(PasswordUtils.encriptarSHA256(passwordSegura));
+        // Encriptamos la contraseña plana usando BCrypt antes de enviarla a la base de datos
+        usuario.setPassword(PasswordUtils.encriptarBCrypt(passwordSegura));
         return usuarioRepository.save(usuario);
     }
 

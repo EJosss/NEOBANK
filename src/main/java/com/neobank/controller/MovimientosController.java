@@ -3,10 +3,12 @@ package com.neobank.controller;
 import com.neobank.ApplicationContextProvider;
 import com.neobank.model.*;
 import com.neobank.model.enums.TipoMovimiento;
+import com.neobank.service.ClienteService;
 import com.neobank.service.CuentaService;
 import com.neobank.service.MovimientoService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -31,13 +33,15 @@ public class MovimientosController extends BaseController {
     @FXML private TextField txtMonto;
     @FXML private TextField txtDescripcion;
     @FXML private Label lblMensaje;
-
     @FXML private Button btnMenuDashboard;
 
     private MovimientoService movimientoService;
     private CuentaService cuentaService;
+    private ClienteService clienteService;
 
-    // Constantes de estilo unificadas de caja completa
+    // 🚀 Lista en memoria para respaldar la búsqueda sin perder datos
+    private ObservableList<CuentaBancaria> listaCuentasOriginal = FXCollections.observableArrayList();
+
     private final String ESTILO_NORMAL = "-fx-background-color: #FFFFFF; -fx-border-color: #CCCCCC; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 8; -fx-font-size: 14px; -fx-text-fill: #1A1A1A;";
     private final String ESTILO_ERROR = "-fx-background-color: #FFFFFF; -fx-border-color: #E53935; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 8; -fx-font-size: 14px; -fx-text-fill: #1A1A1A;";
     private final String ESTILO_CMB_NORMAL = "-fx-background-color: #FFFFFF; -fx-border-color: #CCCCCC; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 6;";
@@ -47,6 +51,8 @@ public class MovimientosController extends BaseController {
     public void initialize() {
         movimientoService = ApplicationContextProvider.getBean(MovimientoService.class);
         cuentaService = ApplicationContextProvider.getBean(CuentaService.class);
+        clienteService = ApplicationContextProvider.getBean(ClienteService.class);
+
         configurarTabla();
         cargarCuentas();
         configurarValidacionesDinamicas();
@@ -54,19 +60,14 @@ public class MovimientosController extends BaseController {
     }
 
     private void configurarValidacionesDinamicas() {
-        // Validación en tiempo real para Monto (Solo números y punto decimal)
         txtMonto.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null && !newValue.isEmpty()) {
-                if (!newValue.matches("^\\d*\\.?\\d*$")) {
-                    txtMonto.setStyle(ESTILO_ERROR);
-                } else {
-                    txtMonto.setStyle(ESTILO_NORMAL);
-                }
+                if (!newValue.matches("^\\d*\\.?\\d*$")) txtMonto.setStyle(ESTILO_ERROR);
+                else txtMonto.setStyle(ESTILO_NORMAL);
             } else {
                 txtMonto.setStyle(ESTILO_NORMAL);
             }
         });
-
         cmbTipoMovimiento.valueProperty().addListener((obs, oldV, newV) -> {
             if (newV != null) cmbTipoMovimiento.setStyle(ESTILO_CMB_NORMAL);
         });
@@ -110,12 +111,77 @@ public class MovimientosController extends BaseController {
     }
 
     private void cargarCuentas() {
-        List<CuentaBancaria> cuentas = cuentaService.listarTodas();
-        cmbCuentasBusqueda.setItems(FXCollections.observableArrayList(cuentas));
+        listaCuentasOriginal.setAll(cuentaService.listarTodas());
+        cmbCuentasBusqueda.setItems(listaCuentasOriginal);
+
         cmbCuentasBusqueda.setConverter(new javafx.util.StringConverter<>() {
-            @Override public String toString(CuentaBancaria c) { return c != null ? c.getNumeroCuenta() + " - Saldo: S/" + c.getSaldo() : ""; }
-            @Override public CuentaBancaria fromString(String string) { return null; }
+            @Override
+            public String toString(CuentaBancaria c) {
+                if (c == null) return "";
+                String dni = "Sin DNI";
+                String nombre = "";
+                if (c.getIdCliente() != null) {
+                    for (Cliente cli : clienteService.listarTodos()) {
+                        if (cli.getId().equals(c.getIdCliente())) {
+                            dni = cli.getDni();
+                            nombre = cli.getNombre();
+                            break;
+                        }
+                    }
+                }
+                return "DNI: " + dni + " - " + nombre + " | Cta: " + c.getNumeroCuenta();
+            }
+
+            @Override
+            public CuentaBancaria fromString(String string) {
+                return listaCuentasOriginal.stream()
+                        .filter(c -> toString(c).equals(string)).findFirst().orElse(null);
+            }
         });
+
+        // 🚀 HACK: Transformamos el ComboBox en un AutoComplete Editable
+        cmbCuentasBusqueda.setEditable(true);
+
+        // 🚀 FILTRO ESTRICTO EN TIEMPO REAL: Solo evalúa el DNI
+        cmbCuentasBusqueda.getEditor().textProperty().addListener((observable, oldValue, newValue) -> {
+            // Ignoramos el evento si el texto es el resultado de hacer clic en una opción
+            if (newValue == null || newValue.startsWith("DNI:")) {
+                return;
+            }
+
+            if (newValue.trim().isEmpty()) {
+                cmbCuentasBusqueda.setItems(listaCuentasOriginal);
+                cmbCuentasBusqueda.hide();
+            } else {
+                ObservableList<CuentaBancaria> filtradas = FXCollections.observableArrayList();
+                for (CuentaBancaria c : listaCuentasOriginal) {
+                    if (c.getIdCliente() != null) {
+                        for (Cliente cli : clienteService.listarTodos()) {
+                            if (cli.getId().equals(c.getIdCliente())) {
+                                // 🔒 CONDICIÓN BLINDADA: Exclusivamente DNI
+                                if (cli.getDni() != null && cli.getDni().contains(newValue.trim())) {
+                                    filtradas.add(c);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Actualizamos la UI sin borrar lo que el cajero está escribiendo
+                javafx.application.Platform.runLater(() -> {
+                    cmbCuentasBusqueda.setItems(filtradas);
+                    cmbCuentasBusqueda.getEditor().setText(newValue);
+                    cmbCuentasBusqueda.getEditor().positionCaret(newValue.length());
+                    if (!filtradas.isEmpty()) {
+                        cmbCuentasBusqueda.show(); // Abre el menú con los resultados
+                    } else {
+                        cmbCuentasBusqueda.hide();
+                    }
+                });
+            }
+        });
+
         cmbTipoMovimiento.setItems(FXCollections.observableArrayList(TipoMovimiento.DEPOSITO, TipoMovimiento.RETIRO));
     }
 
@@ -127,10 +193,8 @@ public class MovimientosController extends BaseController {
         }
     }
 
-    @FXML private void nuevoMovement() { }
-
     @FXML private void nuevoMovimiento() {
-        if (cmbCuentasBusqueda.getValue() == null) { mostrarNotificacionError("Falta Cuenta", "Primero debe seleccionar una cuenta de la lista superior."); return; }
+        if (cmbCuentasBusqueda.getValue() == null) { mostrarNotificacionError("Falta Cuenta", "Seleccione una cuenta superior."); return; }
         txtMonto.clear(); txtDescripcion.clear(); cmbTipoMovimiento.getSelectionModel().clearSelection();
         txtMonto.setStyle(ESTILO_NORMAL); cmbTipoMovimiento.setStyle(ESTILO_CMB_NORMAL);
         panelFormulario.setVisible(true); panelFormulario.setManaged(true); lblMensaje.setText("");
@@ -138,46 +202,40 @@ public class MovimientosController extends BaseController {
 
     @FXML private void guardarMovimiento() {
         boolean hayError = false;
-
         if (cmbTipoMovimiento.getValue() == null) { cmbTipoMovimiento.setStyle(ESTILO_CMB_ERROR); hayError = true; }
         if (txtMonto.getText().trim().isEmpty()) { txtMonto.setStyle(ESTILO_ERROR); hayError = true; }
-
-        if (hayError) {
-            mostrarNotificacionError("Campos Requeridos", "Debe ingresar el tipo de operación y la cantidad de dinero.");
-            return;
-        }
+        if (hayError) { mostrarNotificacionError("Campos Requeridos", "Ingrese tipo y monto."); return; }
 
         CuentaBancaria cuenta = cmbCuentasBusqueda.getValue();
+        if (cuenta == null) { mostrarNotificacionError("Selección Inválida", "Asegúrese de seleccionar un cliente válido de la lista."); return; }
+
         TipoMovimiento tipo = cmbTipoMovimiento.getValue();
-        String montoStr = txtMonto.getText().trim();
 
         try {
-            BigDecimal monto = new BigDecimal(montoStr);
-            if (monto.compareTo(BigDecimal.ZERO) <= 0) {
-                mostrarNotificacionError("Valor Inválido", "El monto de la transacción debe ser mayor a S/ 0.00.");
-                return;
-            }
+            BigDecimal monto = new BigDecimal(txtMonto.getText().trim());
+            if (monto.compareTo(BigDecimal.ZERO) <= 0) { mostrarNotificacionError("Inválido", "Monto mayor a S/ 0.00."); return; }
 
-            movimientoService.registrar(cuenta.getId(), tipo, monto, txtDescripcion.getText().trim(), usuarioActual);
+            Movimiento movimientoRealizado = movimientoService.registrar(cuenta.getId(), tipo, monto, txtDescripcion.getText().trim(), usuarioActual);
             panelFormulario.setVisible(false); panelFormulario.setManaged(false);
-            mostrarNotificacionExito("Transacción Exitosa", "Se ha registrado el " + tipo.name() + " por un valor de S/ " + monto + " en la cuenta.");
+
+            String numeroOperacion = String.format("%08d", movimientoRealizado.getId());
+            mostrarVoucherPantalla(numeroOperacion, cuenta.getNumeroCuenta(), tipo.name(), monto);
 
             Optional<CuentaBancaria> actOpt = cuentaService.listarTodas().stream().filter(c -> c.getId().equals(cuenta.getId())).findFirst();
             if(actOpt.isPresent()) {
-                int index = cmbCuentasBusqueda.getItems().indexOf(cuenta);
-                if(index >= 0) cmbCuentasBusqueda.getItems().set(index, actOpt.get());
-                cmbCuentasBusqueda.setValue(actOpt.get()); buscarMovimientos();
+                listaCuentasOriginal.setAll(cuentaService.listarTodas()); // Refrescamos lista oculta
+                cmbCuentasBusqueda.setValue(actOpt.get());
+                buscarMovimientos();
             }
+
         } catch (NumberFormatException e) {
-            txtMonto.setStyle(ESTILO_ERROR);
-            mostrarNotificacionError("Error de Formato", "Ingrese únicamente números válidos para el dinero de la transacción.");
+            txtMonto.setStyle(ESTILO_ERROR); mostrarNotificacionError("Error", "Números válidos solamente.");
         } catch (IllegalArgumentException e) {
-            mostrarNotificacionError("Operación Rechazada", e.getMessage());
+            mostrarNotificacionError("Rechazado", e.getMessage());
         }
     }
 
     @FXML private void cancelarForm() { panelFormulario.setVisible(false); panelFormulario.setManaged(false); }
-
     @FXML private void irDashboard() { navegar(lblUsuarioMenu, "Dashboard.fxml", 1280, 720); }
     @FXML private void irClientes() { navegar(lblUsuarioMenu, "Clientes.fxml", 1280, 720); }
     @FXML private void irCuentas() { navegar(lblUsuarioMenu, "Cuentas.fxml", 1280, 720); }

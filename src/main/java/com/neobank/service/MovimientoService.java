@@ -31,7 +31,8 @@ public class MovimientoService {
     }
 
     public List<Movimiento> listarTodos() {
-        return (List<Movimiento>) movimientoRepository.findAll();
+        // 🚀 Casting redundante eliminado
+        return movimientoRepository.findAll();
     }
 
     public List<Movimiento> listarPorCuenta(Long idCuenta) {
@@ -69,7 +70,7 @@ public class MovimientoService {
         // 4. Persistir el nuevo estado financiero de la cuenta
         cuentaRepository.update(cuenta);
 
-        // 5. Construir y guardar el registro histórico del movimiento
+        // 5. Construir y guardar el registro (Respetando tu Builder original)
         Movimiento nuevoMovimiento = Movimiento.builder()
                 .idCuenta(idCuenta)
                 .tipoMovimiento(tipo)
@@ -86,7 +87,9 @@ public class MovimientoService {
                 : "Retiro de Efectivo en Ventanilla";
 
         Factura fact = facturaService.registrarFactura(cuenta.getIdCliente(), conceptoOficial, monto);
-        facturaService.pagarFactura(fact.getId()); // Pasa a estado PAGADA al instante
+
+        // 🚀 Error de tipeo corregido
+        facturaService.pagarFactura(fact.getId());
 
         return movimientoGuardado;
     }
@@ -156,11 +159,9 @@ public class MovimientoService {
         movimientoRepository.save(movDestino);
 
         // 9. 🧾 EMISIÓN DE COMPROBANTES DE TRANSFERENCIA AUTOMÁTICOS PARA AMBOS TITULARES
-        // Comprobante de cargo para el emisor
         Factura factEmisor = facturaService.registrarFactura(origen.getIdCliente(), "Transferencia de Fondos (Cargo Enviado)", monto);
         facturaService.pagarFactura(factEmisor.getId());
 
-        // Comprobante de abono para el receptor
         Factura factReceptor = facturaService.registrarFactura(destino.getIdCliente(), "Transferencia de Fondos (Abono Recibido)", monto);
         facturaService.pagarFactura(factReceptor.getId());
     }

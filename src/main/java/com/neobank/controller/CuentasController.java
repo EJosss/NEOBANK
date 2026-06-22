@@ -44,47 +44,68 @@ public class CuentasController extends BaseController {
     private CuentaService cuentaService;
     private ClienteService clienteService;
 
-    // Lista observable para gestionar el filtrado dinámico
+    // Listas para la gestión centralizada del filtrado reactivo
     private ObservableList<CuentaBancaria> listaCuentasMaster = FXCollections.observableArrayList();
+    private FilteredList<CuentaBancaria> listaFiltrada;
 
     @FXML
     public void initialize() {
         cuentaService = ApplicationContextProvider.getBean(CuentaService.class);
         clienteService = ApplicationContextProvider.getBean(ClienteService.class);
         configurarTabla();
+        configurarBusquedaEnTiempoReal(); // 🚀 Inicializamos el motor de búsqueda universal
         cargarDatos();
         configurarMenuContextual();
-        configurarBusquedaEnTiempoReal(); // 🚀 Activamos el súper filtro
         configurarLimpiezaAutomatica(lblErrorForm, cmbClientes, cmbTipo);
     }
 
     private void configurarBusquedaEnTiempoReal() {
-        FilteredList<CuentaBancaria> listaFiltrada = new FilteredList<>(listaCuentasMaster, cuenta -> cuenta.getEstado() == EstadoCuenta.ACTIVA);
+        // Enlazamos la lista filtrada directamente con la maestra
+        listaFiltrada = new FilteredList<>(listaCuentasMaster, cuenta -> cuenta.getEstado() == EstadoCuenta.ACTIVA);
 
-        // Función unificada que evalúa ambos componentes reactivos
         Runnable actualizarFiltro = () -> {
             String textoBusqueda = txtBuscar.getText() != null ? txtBuscar.getText().toLowerCase().trim() : "";
             boolean mostrarCerradas = chkVerCerradas.isSelected();
 
             listaFiltrada.setPredicate(cuenta -> {
-                // 1. Condición de Estado Dinámica
+                // 1. Evaluación de Estado (Activa / Cerrada)
                 EstadoCuenta estadoEsperado = mostrarCerradas ? EstadoCuenta.CERRADA : EstadoCuenta.ACTIVA;
                 if (cuenta.getEstado() != estadoEsperado) {
                     return false;
                 }
 
-                // 2. Condición de Texto
+                // Si la barra está limpia, pasan todos los registros del estado correspondiente
                 if (textoBusqueda.isEmpty()) {
                     return true;
                 }
-                return cuenta.getNumeroCuenta() != null && cuenta.getNumeroCuenta().toLowerCase().contains(textoBusqueda);
+
+                // 2. Evaluación del Número de Cuenta
+                if (cuenta.getNumeroCuenta() != null && cuenta.getNumeroCuenta().toLowerCase().contains(textoBusqueda)) {
+                    return true;
+                }
+
+                // 3. 🚀 BUSCADOR UNIVERSAL: Cruzar datos relacionales con el Cliente (DNI y Nombre)
+                if (cuenta.getIdCliente() != null) {
+                    for (Cliente c : clienteService.listarTodos()) {
+                        if (c.getId().equals(cuenta.getIdCliente())) {
+                            String dniCliente = c.getDni() != null ? c.getDni().toLowerCase().trim() : "";
+                            String nombreCliente = c.getNombre() != null ? c.getNombre().toLowerCase().trim() : "";
+
+                            // Retorna verdadero si coincide con el DNI o el Nombre escrito
+                            return dniCliente.contains(textoBusqueda) || nombreCliente.contains(textoBusqueda);
+                        }
+                    }
+                }
+
+                return false;
             });
         };
 
-        // Vinculamos los escuchadores al activador
+        // Escuchadores reactivos de la interfaz de usuario
         txtBuscar.textProperty().addListener((observable, oldValue, newValue) -> actualizarFiltro.run());
         chkVerCerradas.selectedProperty().addListener((observable, oldValue, newValue) -> actualizarFiltro.run());
 
+        // Asignación única y definitiva del contenedor de datos a la tabla
         tablaCuentas.setItems(listaFiltrada);
     }
 
@@ -149,11 +170,7 @@ public class CuentasController extends BaseController {
 
     private void cargarDatos() {
         List<CuentaBancaria> cuentas = cuentaService.listarTodas();
-        listaCuentasMaster.setAll(cuentas);
-        // Si no se está buscando nada, la tabla muestra la lista master inicial
-        if (txtBuscar.getText().trim().isEmpty()) {
-            tablaCuentas.setItems(listaCuentasMaster);
-        }
+        listaCuentasMaster.setAll(cuentas); // Actualiza la lista maestra sin romper la vinculación del filtro
     }
 
     @FXML private void mostrarTodas() { txtBuscar.clear(); cargarDatos(); }

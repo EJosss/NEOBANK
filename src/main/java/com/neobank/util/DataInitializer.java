@@ -25,8 +25,9 @@ public class DataInitializer implements ApplicationEventListener<StartupEvent> {
             admin.setTelefono("900000000");
             admin.setCorreo("admin@neobank.com");
             admin.setUsername("admin");
-            admin.setPassword(PasswordUtils.encriptarSHA256("admin123"));
-            admin.setRol(RolUsuario.ADMINISTRADOR); // 🚀 Asignación corregida a Enum
+            // 🚀 Encriptación BCrypt aplicada
+            admin.setPassword(PasswordUtils.encriptarBCrypt("admin123"));
+            admin.setRol(RolUsuario.ADMINISTRADOR);
             admin.setActivo(true);
             usuarioRepository.save(admin);
 
@@ -36,12 +37,13 @@ public class DataInitializer implements ApplicationEventListener<StartupEvent> {
             cajero.setTelefono("911111111");
             cajero.setCorreo("cajero@neobank.com");
             cajero.setUsername("cajero");
-            cajero.setPassword(PasswordUtils.encriptarSHA256("cajero123"));
-            cajero.setRol(RolUsuario.CAJERO); // 🚀 Asignación corregida a Enum
+            // 🚀 Encriptación BCrypt aplicada
+            cajero.setPassword(PasswordUtils.encriptarBCrypt("cajero123"));
+            cajero.setRol(RolUsuario.CAJERO);
             cajero.setActivo(true);
             usuarioRepository.save(cajero);
 
-            System.out.println("====== [NEOBANK] Usuarios iniciales creados con éxito en el arranque ======");
+            System.out.println("====== [NEOBANK] Usuarios iniciales creados con seguridad BCrypt ======");
         }
     }
 }

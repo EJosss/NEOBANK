@@ -2,9 +2,12 @@ package com.neobank.controller;
 
 import com.neobank.ApplicationContextProvider;
 import com.neobank.model.CuentaBancaria;
+import com.neobank.model.Cliente;
+import com.neobank.service.ClienteService;
 import com.neobank.service.CuentaService;
 import com.neobank.service.MovimientoService;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import java.math.BigDecimal;
@@ -24,8 +27,11 @@ public class TransferenciasController extends BaseController {
 
     private CuentaService cuentaService;
     private MovimientoService movimientoService;
+    private ClienteService clienteService;
 
-    // Constantes de estilo de caja completa unificadas
+    // 🚀 Lista en memoria para la Cuenta Origen
+    private ObservableList<CuentaBancaria> listaOrigenOriginal = FXCollections.observableArrayList();
+
     private final String ESTILO_NORMAL = "-fx-background-color: #FFFFFF; -fx-border-color: #CCCCCC; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 8; -fx-font-size: 14px; -fx-text-fill: #1A1A1A;";
     private final String ESTILO_ERROR = "-fx-background-color: #FFFFFF; -fx-border-color: #E53935; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 8; -fx-font-size: 14px; -fx-text-fill: #1A1A1A;";
     private final String ESTILO_CMB_NORMAL = "-fx-background-color: #FFFFFF; -fx-border-color: #CCCCCC; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 6;";
@@ -35,40 +41,30 @@ public class TransferenciasController extends BaseController {
     public void initialize() {
         cuentaService = ApplicationContextProvider.getBean(CuentaService.class);
         movimientoService = ApplicationContextProvider.getBean(MovimientoService.class);
+        clienteService = ApplicationContextProvider.getBean(ClienteService.class);
+
         cargarCuentas();
         configurarValidacionesDinamicas();
         configurarLimpiezaAutomatica(lblMensaje, txtDescripcion);
     }
 
     private void configurarValidacionesDinamicas() {
-        // Regla: Cuenta Destino (Solo números y guiones)
         txtCuentaDestino.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null && !newValue.isEmpty()) {
-                if (!newValue.matches("^[0-9\\-]*$")) {
-                    txtCuentaDestino.setStyle(ESTILO_ERROR);
-                } else {
-                    txtCuentaDestino.setStyle(ESTILO_NORMAL);
-                }
+                if (!newValue.matches("^[0-9\\-]*$")) txtCuentaDestino.setStyle(ESTILO_ERROR);
+                else txtCuentaDestino.setStyle(ESTILO_NORMAL);
             } else {
                 txtCuentaDestino.setStyle(ESTILO_NORMAL);
             }
         });
 
-        // Regla: Monto (Solo números decimales)
         txtMonto.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null && !newValue.isEmpty()) {
-                if (!newValue.matches("^\\d*\\.?\\d*$")) {
-                    txtMonto.setStyle(ESTILO_ERROR);
-                } else {
-                    txtMonto.setStyle(ESTILO_NORMAL);
-                }
+                if (!newValue.matches("^\\d*\\.?\\d*$")) txtMonto.setStyle(ESTILO_ERROR);
+                else txtMonto.setStyle(ESTILO_NORMAL);
             } else {
                 txtMonto.setStyle(ESTILO_NORMAL);
             }
-        });
-
-        cmbCuentaOrigen.valueProperty().addListener((obs, oldV, newV) -> {
-            if (newV != null) cmbCuentaOrigen.setStyle(ESTILO_CMB_NORMAL);
         });
     }
 
@@ -83,24 +79,94 @@ public class TransferenciasController extends BaseController {
     }
 
     private void cargarCuentas() {
-        List<CuentaBancaria> cuentas = cuentaService.listarTodas();
-        cmbCuentaOrigen.setItems(FXCollections.observableArrayList(cuentas));
+        listaOrigenOriginal.setAll(cuentaService.listarTodas());
+        cmbCuentaOrigen.setItems(listaOrigenOriginal);
+
         cmbCuentaOrigen.setConverter(new javafx.util.StringConverter<>() {
-            @Override public String toString(CuentaBancaria c) { return c != null ? c.getNumeroCuenta() : ""; }
-            @Override public CuentaBancaria fromString(String string) { return null; }
+            @Override
+            public String toString(CuentaBancaria c) {
+                if (c == null) return "";
+                String dni = "Sin DNI";
+                String nombre = "";
+                if (c.getIdCliente() != null) {
+                    for (Cliente cli : clienteService.listarTodos()) {
+                        if (cli.getId().equals(c.getIdCliente())) {
+                            dni = cli.getDni();
+                            nombre = cli.getNombre();
+                            break;
+                        }
+                    }
+                }
+                return "DNI: " + dni + " - " + nombre + " | Cta: " + c.getNumeroCuenta();
+            }
+
+            @Override
+            public CuentaBancaria fromString(String string) {
+                return listaOrigenOriginal.stream()
+                        .filter(c -> toString(c).equals(string)).findFirst().orElse(null);
+            }
         });
+
+        // 🚀 APLICANDO EL HACK DE AUTOCOMPLETADO PARA ORIGEN
+        cmbCuentaOrigen.setEditable(true);
+
+        cmbCuentaOrigen.getEditor().textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null || newValue.startsWith("DNI:")) {
+                return;
+            }
+
+            if (newValue.trim().isEmpty()) {
+                cmbCuentaOrigen.setItems(listaOrigenOriginal);
+                cmbCuentaOrigen.hide();
+            } else {
+                ObservableList<CuentaBancaria> filtradas = FXCollections.observableArrayList();
+                for (CuentaBancaria c : listaOrigenOriginal) {
+                    if (c.getIdCliente() != null) {
+                        for (Cliente cli : clienteService.listarTodos()) {
+                            if (cli.getId().equals(c.getIdCliente())) {
+                                // 🔒 REGLA EXCLUSIVA DNI
+                                if (cli.getDni() != null && cli.getDni().contains(newValue.trim())) {
+                                    filtradas.add(c);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                javafx.application.Platform.runLater(() -> {
+                    cmbCuentaOrigen.setItems(filtradas);
+                    cmbCuentaOrigen.getEditor().setText(newValue);
+                    cmbCuentaOrigen.getEditor().positionCaret(newValue.length());
+                    if (!filtradas.isEmpty()) {
+                        cmbCuentaOrigen.show();
+                    } else {
+                        cmbCuentaOrigen.hide();
+                    }
+                });
+            }
+        });
+
+        // Forzamos actualizar saldo al seleccionar manualmente usando enter o clic
+        cmbCuentaOrigen.valueProperty().addListener((obs, oldV, newV) -> actualizarSaldo());
     }
 
     @FXML private void actualizarSaldo() {
         CuentaBancaria cuenta = cmbCuentaOrigen.getValue();
-        if (cuenta != null) lblSaldoDisponible.setText("Saldo Disponible: S/ " + cuenta.getSaldo());
+        if (cuenta != null) {
+            lblSaldoDisponible.setText("Saldo Disponible: S/ " + cuenta.getSaldo());
+            cmbCuentaOrigen.setStyle(ESTILO_CMB_NORMAL);
+        } else {
+            lblSaldoDisponible.setText("Saldo Disponible: S/ 0.00");
+        }
     }
 
     @FXML
     public void realizarTransferencia() {
         boolean hayError = false;
 
-        if (cmbCuentaOrigen.getValue() == null) { cmbCuentaOrigen.setStyle(ESTILO_CMB_ERROR); hayError = true; }
+        CuentaBancaria origen = cmbCuentaOrigen.getValue();
+        if (origen == null) { cmbCuentaOrigen.setStyle(ESTILO_CMB_ERROR); hayError = true; }
         if (txtCuentaDestino.getText().trim().isEmpty()) { txtCuentaDestino.setStyle(ESTILO_ERROR); hayError = true; }
         if (txtMonto.getText().trim().isEmpty()) { txtMonto.setStyle(ESTILO_ERROR); hayError = true; }
 
@@ -109,7 +175,6 @@ public class TransferenciasController extends BaseController {
             return;
         }
 
-        CuentaBancaria origen = cmbCuentaOrigen.getValue();
         String destino = txtCuentaDestino.getText().trim();
         String montoStr = txtMonto.getText().trim();
         String desc = txtDescripcion.getText().trim();
@@ -122,11 +187,16 @@ public class TransferenciasController extends BaseController {
             }
 
             movimientoService.transferir(origen.getId(), destino, monto, desc, usuarioActual);
-            mostrarNotificacionExito("Transferencia Procesada", "Se han enviado S/ " + monto + " a la cuenta '" + destino + "' con éxito.");
+
+            String numOperacion = "TR-" + (System.currentTimeMillis() % 10000000);
+            mostrarVoucherPantalla(numOperacion, origen.getNumeroCuenta(), "TRANSFERENCIA", monto);
 
             txtCuentaDestino.clear(); txtMonto.clear(); txtDescripcion.clear();
             txtCuentaDestino.setStyle(ESTILO_NORMAL); txtMonto.setStyle(ESTILO_NORMAL);
-            cargarCuentas(); cmbCuentaOrigen.getSelectionModel().clearSelection();
+
+            listaOrigenOriginal.setAll(cuentaService.listarTodas()); // Refrescar lista oculta
+            cmbCuentaOrigen.getSelectionModel().clearSelection();
+            cmbCuentaOrigen.getEditor().clear(); // Limpiar la barra de búsqueda
             lblSaldoDisponible.setText("Saldo Disponible: S/ 0.00");
 
         } catch (NumberFormatException e) {
