@@ -1,0 +1,16 @@
+2026-06-22 09:41:30.401768-05:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Tabla "MOVIMIENTOS" no encontrada
+Table "MOVIMIENTOS" not found; SQL statement:
+SELECT COUNT(*) FROM `movimientos` movimiento_ [42102-232]
+2026-06-22 09:45:33.785137-05:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Tabla "FACTURAS" no encontrada
+Table "FACTURAS" not found; SQL statement:
+SELECT MAX(id) FROM facturas [42102-232]
+2026-06-22 09:45:35.841024-05:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Tabla "FACTURAS" no encontrada
+Table "FACTURAS" not found; SQL statement:
+SELECT MAX(id) FROM facturas [42102-232]
+2026-06-22 09:46:38.924335-05:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Tabla "FACTURAS" no encontrada
+Table "FACTURAS" not found; SQL statement:
+SELECT MAX(id) FROM facturas [42102-232]

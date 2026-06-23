@@ -41,7 +41,8 @@ public class NeoApplication extends Application {
             Scene scene = new Scene(root, 900, 600);
             primaryStage.setTitle("NeoBank System");
             primaryStage.setScene(scene);
-            primaryStage.setResizable(false);
+           // primaryStage.setMaximized(true);
+            primaryStage.setResizable(true);
             primaryStage.show();
 
         } catch (Exception e) {

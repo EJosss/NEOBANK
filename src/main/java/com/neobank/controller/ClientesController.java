@@ -94,6 +94,7 @@ public class ClientesController extends BaseController {
 
         tablaClientes.setItems(listaFiltrada);
     }
+
     @Override
     protected void actualizarInfoUsuario() {
         if (lblUsuarioMenu != null && usuarioActual != null) {
@@ -133,7 +134,8 @@ public class ClientesController extends BaseController {
 
         txtTelefono.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null && !newValue.isEmpty()) {
-                if (!newValue.matches("^[0-9]*$") || newValue.length() > 9) {
+                // 🚀 NUEVA VALIDACIÓN: Solo acepta números que empiecen con 9 (Máximo 9 dígitos)
+                if (!newValue.matches("^9[0-9]{0,8}$")) {
                     txtTelefono.setStyle(ESTILO_ERROR);
                 } else {
                     txtTelefono.setStyle(ESTILO_NORMAL);
@@ -180,12 +182,11 @@ public class ClientesController extends BaseController {
     }
 
     @FXML private void buscarCliente() {
-        // La búsqueda ya es en tiempo real, pero si presionan el botón, refrescamos la vista
         if (txtBuscar.getText().trim().isEmpty()) { cargarClientes(); }
     }
 
     @FXML private void mostrarTodos() {
-        txtBuscar.clear(); // Al limpiar, el listener en tiempo real restaura la tabla completa automáticamente
+        txtBuscar.clear();
     }
 
     @FXML private void nuevoCliente() {
@@ -213,7 +214,8 @@ public class ClientesController extends BaseController {
         try {
             clienteService.eliminar(seleccionado.getId(), usuarioActual);
             cargarClientes();
-            mostrarNotificacionExito("Cliente Desactivado", "El cliente '" + seleccionado.getNombre() + "' ha pasado a estado INACTIVO correctamente.");
+            // 🚀 REEMPLAZO POR MENSAJE NO BLOQUEANTE
+            mostrarMensajeUniversal(lblMensaje, "✔ El cliente '" + seleccionado.getNombre() + "' fue desactivado.", true);
         } catch (IllegalArgumentException e) {
             mostrarNotificacionError("Restricción de Acceso", e.getMessage());
         }
@@ -250,9 +252,10 @@ public class ClientesController extends BaseController {
             return;
         }
 
-        if (!telefono.matches("^[0-9]{9}$")) {
+        // 🚀 NUEVA VALIDACIÓN AL GUARDAR
+        if (!telefono.matches("^9[0-9]{8}$")) {
             txtTelefono.setStyle(ESTILO_ERROR);
-            mostrarNotificacionError("Formato de Teléfono", "El número de teléfono es incorrecto. Debe tener exactamente 9 caracteres numéricos.");
+            mostrarNotificacionError("Formato de Teléfono", "El número de celular en Perú debe empezar con 9 y tener exactamente 9 dígitos.");
             return;
         }
 
@@ -261,13 +264,15 @@ public class ClientesController extends BaseController {
                 Cliente nuevo = Cliente.builder().nombre(nombre).dni(dni).telefono(telefono)
                         .correo(correo).direccion(direccion).estado(EstadoCliente.ACTIVO).build();
                 clienteService.guardar(nuevo);
-                mostrarNotificacionExito("Registro Exitoso", "El cliente '" + nombre + "' fue incorporado al sistema con éxito.");
+                // 🚀 REEMPLAZO POR MENSAJE NO BLOQUEANTE
+                mostrarMensajeUniversal(lblMensaje, "✔ Cliente registrado con éxito.", true);
             } else {
                 clienteEditando.setNombre(nombre); clienteEditando.setDni(dni);
                 clienteEditando.setTelefono(telefono); clienteEditando.setCorreo(correo);
                 clienteEditando.setDireccion(direccion);
                 clienteService.actualizar(clienteEditando);
-                mostrarNotificacionExito("Actualización Exitosa", "Los datos del cliente se actualizaron correctamente.");
+                // 🚀 REEMPLAZO POR MENSAJE NO BLOQUEANTE
+                mostrarMensajeUniversal(lblMensaje, "✔ Cliente actualizado con éxito.", true);
             }
             cargarClientes(); mostrarFormulario(false); limpiarFormulario();
 
