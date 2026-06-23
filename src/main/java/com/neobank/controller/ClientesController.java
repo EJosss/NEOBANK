@@ -55,7 +55,7 @@ public class ClientesController extends BaseController {
         clienteService = ApplicationContextProvider.getBean(ClienteService.class);
         configurarTabla();
         cargarClientes();
-        configurarBusquedaEnTiempoReal(); // 🚀 Filtro dinámico activado
+        configurarBusquedaEnTiempoReal();
         configurarValidacionesEnTiempoReal();
         configurarLimpiezaAutomatica(lblErrorForm, txtCorreo, txtDireccion);
     }
@@ -68,13 +68,11 @@ public class ClientesController extends BaseController {
             boolean mostrarInactivos = chkVerInactivos.isSelected();
 
             listaFiltrada.setPredicate(cliente -> {
-                // 1. Condición de Estado Dinámica
                 EstadoCliente estadoEsperado = mostrarInactivos ? EstadoCliente.INACTIVO : EstadoCliente.ACTIVO;
                 if (cliente.getEstado() != estadoEsperado) {
                     return false;
                 }
 
-                // 2. Condición de Texto (Nombre o DNI)
                 if (textoBusqueda.isEmpty()) {
                     return true;
                 }
@@ -92,6 +90,7 @@ public class ClientesController extends BaseController {
         txtBuscar.textProperty().addListener((observable, oldValue, newValue) -> actualizarFiltro.run());
         chkVerInactivos.selectedProperty().addListener((observable, oldValue, newValue) -> actualizarFiltro.run());
 
+        // La tabla ahora escucha exclusivamente a la lista filtrada
         tablaClientes.setItems(listaFiltrada);
     }
 
@@ -134,7 +133,7 @@ public class ClientesController extends BaseController {
 
         txtTelefono.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null && !newValue.isEmpty()) {
-                // 🚀 NUEVA VALIDACIÓN: Solo acepta números que empiecen con 9 (Máximo 9 dígitos)
+                // Validación para celular de Perú en tiempo real
                 if (!newValue.matches("^9[0-9]{0,8}$")) {
                     txtTelefono.setStyle(ESTILO_ERROR);
                 } else {
@@ -175,10 +174,9 @@ public class ClientesController extends BaseController {
 
     private void cargarClientes() {
         List<Cliente> clientes = clienteService.listarTodos();
+        // ✔️ CORRECCIÓN: Solo actualizamos los datos maestros.
+        // Ya no rompemos la conexión con la FilteredList de la tabla.
         listaClientesMaster.setAll(clientes);
-        if (txtBuscar.getText().trim().isEmpty()) {
-            tablaClientes.setItems(listaClientesMaster);
-        }
     }
 
     @FXML private void buscarCliente() {
@@ -214,8 +212,8 @@ public class ClientesController extends BaseController {
         try {
             clienteService.eliminar(seleccionado.getId(), usuarioActual);
             cargarClientes();
-            // 🚀 REEMPLAZO POR MENSAJE NO BLOQUEANTE
-            mostrarMensajeUniversal(lblMensaje, "✔ El cliente '" + seleccionado.getNombre() + "' fue desactivado.", true);
+            // Alerta emergente restaurada para eliminar
+            mostrarNotificacionExito("Cliente Desactivado", "El cliente '" + seleccionado.getNombre() + "' ha pasado a estado INACTIVO correctamente.");
         } catch (IllegalArgumentException e) {
             mostrarNotificacionError("Restricción de Acceso", e.getMessage());
         }
@@ -252,7 +250,7 @@ public class ClientesController extends BaseController {
             return;
         }
 
-        // 🚀 NUEVA VALIDACIÓN AL GUARDAR
+        // Validación para celular de Perú al presionar guardar
         if (!telefono.matches("^9[0-9]{8}$")) {
             txtTelefono.setStyle(ESTILO_ERROR);
             mostrarNotificacionError("Formato de Teléfono", "El número de celular en Perú debe empezar con 9 y tener exactamente 9 dígitos.");
@@ -264,15 +262,15 @@ public class ClientesController extends BaseController {
                 Cliente nuevo = Cliente.builder().nombre(nombre).dni(dni).telefono(telefono)
                         .correo(correo).direccion(direccion).estado(EstadoCliente.ACTIVO).build();
                 clienteService.guardar(nuevo);
-                // 🚀 REEMPLAZO POR MENSAJE NO BLOQUEANTE
-                mostrarMensajeUniversal(lblMensaje, "✔ Cliente registrado con éxito.", true);
+                // Alerta emergente restaurada para registro nuevo
+                mostrarNotificacionExito("Registro Exitoso", "El cliente '" + nombre + "' fue incorporado al sistema con éxito.");
             } else {
                 clienteEditando.setNombre(nombre); clienteEditando.setDni(dni);
                 clienteEditando.setTelefono(telefono); clienteEditando.setCorreo(correo);
                 clienteEditando.setDireccion(direccion);
                 clienteService.actualizar(clienteEditando);
-                // 🚀 REEMPLAZO POR MENSAJE NO BLOQUEANTE
-                mostrarMensajeUniversal(lblMensaje, "✔ Cliente actualizado con éxito.", true);
+                // Alerta emergente restaurada para actualización
+                mostrarNotificacionExito("Actualización Exitosa", "Los datos del cliente se actualizaron correctamente.");
             }
             cargarClientes(); mostrarFormulario(false); limpiarFormulario();
 

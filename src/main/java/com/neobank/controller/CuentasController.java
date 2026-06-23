@@ -16,6 +16,7 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.VBox;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Random;
 
@@ -44,23 +45,79 @@ public class CuentasController extends BaseController {
     private CuentaService cuentaService;
     private ClienteService clienteService;
 
-    // Listas para la gestión centralizada del filtrado reactivo
+    // Listas para la gestión centralizada
     private ObservableList<CuentaBancaria> listaCuentasMaster = FXCollections.observableArrayList();
     private FilteredList<CuentaBancaria> listaFiltrada;
+
+    // 🚀 Lista dedicada para el autocompletado del ComboBox
+    private ObservableList<Cliente> listaClientesCombo = FXCollections.observableArrayList();
 
     @FXML
     public void initialize() {
         cuentaService = ApplicationContextProvider.getBean(CuentaService.class);
         clienteService = ApplicationContextProvider.getBean(ClienteService.class);
+
         configurarTabla();
-        configurarBusquedaEnTiempoReal(); // 🚀 Inicializamos el motor de búsqueda universal
+        configurarBusquedaEnTiempoReal();
         cargarDatos();
         configurarMenuContextual();
         configurarLimpiezaAutomatica(lblErrorForm, cmbClientes, cmbTipo);
+        configurarAutocompletadoClientes(); // 🚀 Inicializa el buscador por DNI
+    }
+
+    // 🚀 NUEVO MÉTODO: Lógica del buscador por DNI o Nombre
+    private void configurarAutocompletadoClientes() {
+        // 1. Enseñamos al ComboBox cómo mostrar al cliente (DNI - Nombre)
+        cmbClientes.setConverter(new javafx.util.StringConverter<>() {
+            @Override
+            public String toString(Cliente c) {
+                return c == null ? "" : c.getDni() + " - " + c.getNombre();
+            }
+
+            @Override
+            public Cliente fromString(String string) {
+                return listaClientesCombo.stream()
+                        .filter(c -> toString(c).equals(string)).findFirst().orElse(null);
+            }
+        });
+
+        // 2. Volvemos editable la cajita
+        cmbClientes.setEditable(true);
+
+        // 3. Agregamos el motor de búsqueda en tiempo real
+        cmbClientes.getEditor().textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null) return;
+
+            // Si la cajita está limpia, mostramos todos
+            if (newValue.trim().isEmpty()) {
+                cmbClientes.setItems(listaClientesCombo);
+                cmbClientes.hide();
+            } else {
+                ObservableList<Cliente> filtrados = FXCollections.observableArrayList();
+                for (Cliente c : listaClientesCombo) {
+                    // 🚀 BÚSQUEDA MÁGICA: Por DNI exacto o por Nombre en minúsculas
+                    if ((c.getDni() != null && c.getDni().contains(newValue)) ||
+                            (c.getNombre() != null && c.getNombre().toLowerCase().contains(newValue.toLowerCase()))) {
+                        filtrados.add(c);
+                    }
+                }
+
+                // Evita problemas gráficos con JavaFX usando Platform.runLater
+                javafx.application.Platform.runLater(() -> {
+                    cmbClientes.setItems(filtrados);
+                    cmbClientes.getEditor().setText(newValue);
+                    cmbClientes.getEditor().positionCaret(newValue.length());
+                    if (!filtrados.isEmpty()) {
+                        cmbClientes.show();
+                    } else {
+                        cmbClientes.hide();
+                    }
+                });
+            }
+        });
     }
 
     private void configurarBusquedaEnTiempoReal() {
-        // Enlazamos la lista filtrada directamente con la maestra
         listaFiltrada = new FilteredList<>(listaCuentasMaster, cuenta -> cuenta.getEstado() == EstadoCuenta.ACTIVA);
 
         Runnable actualizarFiltro = () -> {
@@ -68,44 +125,29 @@ public class CuentasController extends BaseController {
             boolean mostrarCerradas = chkVerCerradas.isSelected();
 
             listaFiltrada.setPredicate(cuenta -> {
-                // 1. Evaluación de Estado (Activa / Cerrada)
                 EstadoCuenta estadoEsperado = mostrarCerradas ? EstadoCuenta.CERRADA : EstadoCuenta.ACTIVA;
-                if (cuenta.getEstado() != estadoEsperado) {
-                    return false;
-                }
+                if (cuenta.getEstado() != estadoEsperado) return false;
+                if (textoBusqueda.isEmpty()) return true;
 
-                // Si la barra está limpia, pasan todos los registros del estado correspondiente
-                if (textoBusqueda.isEmpty()) {
-                    return true;
-                }
-
-                // 2. Evaluación del Número de Cuenta
                 if (cuenta.getNumeroCuenta() != null && cuenta.getNumeroCuenta().toLowerCase().contains(textoBusqueda)) {
                     return true;
                 }
 
-                // 3. 🚀 BUSCADOR UNIVERSAL: Cruzar datos relacionales con el Cliente (DNI y Nombre)
                 if (cuenta.getIdCliente() != null) {
                     for (Cliente c : clienteService.listarTodos()) {
                         if (c.getId().equals(cuenta.getIdCliente())) {
                             String dniCliente = c.getDni() != null ? c.getDni().toLowerCase().trim() : "";
                             String nombreCliente = c.getNombre() != null ? c.getNombre().toLowerCase().trim() : "";
-
-                            // Retorna verdadero si coincide con el DNI o el Nombre escrito
                             return dniCliente.contains(textoBusqueda) || nombreCliente.contains(textoBusqueda);
                         }
                     }
                 }
-
                 return false;
             });
         };
 
-        // Escuchadores reactivos de la interfaz de usuario
         txtBuscar.textProperty().addListener((observable, oldValue, newValue) -> actualizarFiltro.run());
         chkVerCerradas.selectedProperty().addListener((observable, oldValue, newValue) -> actualizarFiltro.run());
-
-        // Asignación única y definitiva del contenedor de datos a la tabla
         tablaCuentas.setItems(listaFiltrada);
     }
 
@@ -166,41 +208,76 @@ public class CuentasController extends BaseController {
         colEstado.setCellValueFactory(cellData -> new SimpleStringProperty(
                 cellData.getValue().getEstado() != null ? cellData.getValue().getEstado().name() : ""
         ));
+
+        // Reemplaza la configuración de colSaldo por esto:
+        colSaldo.setCellValueFactory(new PropertyValueFactory<>("saldo"));
+        colSaldo.setCellFactory(column -> new TableCell<CuentaBancaria, BigDecimal>() {
+            private final DecimalFormat format = new DecimalFormat("S/ #,##0.00");
+
+            @Override
+            protected void updateItem(BigDecimal item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(format.format(item));
+                }
+            }
+        });
     }
 
     private void cargarDatos() {
         List<CuentaBancaria> cuentas = cuentaService.listarTodas();
-        listaCuentasMaster.setAll(cuentas); // Actualiza la lista maestra sin romper la vinculación del filtro
+        listaCuentasMaster.setAll(cuentas);
     }
 
     @FXML private void mostrarTodas() { txtBuscar.clear(); cargarDatos(); }
 
     @FXML private void nuevaCuenta() {
-        cmbClientes.setItems(FXCollections.observableArrayList(clienteService.listarTodos()));
+        // 🚀 Llenamos la lista del autocompletado
+        listaClientesCombo.setAll(clienteService.listarTodos());
+        cmbClientes.setItems(listaClientesCombo);
         cmbTipo.setItems(FXCollections.observableArrayList(TipoCuenta.values()));
-        cmbClientes.getSelectionModel().clearSelection(); cmbTipo.getSelectionModel().clearSelection();
-        panelFormulario.setVisible(true); panelFormulario.setManaged(true);
+
+        // Limpiamos los selectores
+        cmbClientes.getSelectionModel().clearSelection();
+        cmbClientes.getEditor().clear();
+        cmbTipo.getSelectionModel().clearSelection();
+
+        panelFormulario.setVisible(true);
+        panelFormulario.setManaged(true);
         lblErrorForm.setText("");
     }
 
     @FXML private void guardarCuenta() {
-        if (cmbClientes.getValue() == null || cmbTipo.getValue() == null) {
-            lblErrorForm.setText("⚠ Selecciona un Cliente y Tipo de Cuenta.");
+        Cliente cliente = cmbClientes.getValue();
+
+        // 🚀 Si escribieron el nombre/DNI y le dieron a guardar sin hacer clic en la lista:
+        if (cliente == null && !cmbClientes.getEditor().getText().isEmpty()) {
+            cliente = cmbClientes.getConverter().fromString(cmbClientes.getEditor().getText());
+        }
+
+        if (cliente == null || cmbTipo.getValue() == null) {
+            lblErrorForm.setText("⚠ Selecciona un Cliente válido de la lista y Tipo de Cuenta.");
             return;
         }
 
-        Cliente cliente = cmbClientes.getValue(); TipoCuenta tipo = cmbTipo.getValue();
+        TipoCuenta tipo = cmbTipo.getValue();
         String numero = "4532-" + (1000 + new Random().nextInt(9000)) + "-" + (1000 + new Random().nextInt(9000));
 
         CuentaBancaria nuevaCuenta = new CuentaBancaria();
-        nuevaCuenta.setNumeroCuenta(numero); nuevaCuenta.setIdCliente(cliente.getId());
-        nuevaCuenta.setTipoCuenta(tipo); nuevaCuenta.setSaldo(BigDecimal.ZERO);
+        nuevaCuenta.setNumeroCuenta(numero);
+        nuevaCuenta.setIdCliente(cliente.getId());
+        nuevaCuenta.setTipoCuenta(tipo);
+        nuevaCuenta.setSaldo(BigDecimal.ZERO);
         nuevaCuenta.setEstado(EstadoCuenta.ACTIVA);
 
         cuentaService.guardar(nuevaCuenta);
         cargarDatos();
         mostrarFormulario(false);
-        mostrarNotificacionExito("Apertura de Cuenta", "La cuenta número '" + numero + "' vinculada al cliente '" + cliente.getNombre() + "' fue abierta con éxito.");
+
+        // 🚀 REEMPLAZO POR MENSAJE NO BLOQUEANTE
+        mostrarMensajeUniversal(lblMensaje, "✔ Cuenta '" + numero + "' vinculada a " + cliente.getNombre(), true);
     }
 
     @FXML private void eliminarCuenta() {
@@ -209,7 +286,8 @@ public class CuentasController extends BaseController {
             try {
                 cuentaService.eliminar(sel.getId(), usuarioActual);
                 cargarDatos();
-                mostrarNotificacionExito("Cuenta Inhabilitada", "La cuenta número '" + sel.getNumeroCuenta() + "' se encuentra ahora en estado CERRADA.");
+                // 🚀 REEMPLAZO POR MENSAJE NO BLOQUEANTE
+                mostrarMensajeUniversal(lblMensaje, "✔ Cuenta '" + sel.getNumeroCuenta() + "' CERRADA correctamente.", true);
             } catch (IllegalArgumentException e) {
                 mostrarNotificacionError("Restricción de Acceso", e.getMessage());
             }
